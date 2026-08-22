@@ -183,10 +183,19 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
   const { id, role } = req.user!;
   const result = await AuthService.getMe(id, role);
 
+  let message = 'User profile retrieved successfully!';
+  if (result?.role === 'CLEANER') {
+    if (result.isApproved || result.status === 'APPROVED') {
+      message = 'Cleaner account is approved and active!';
+    } else {
+      message = 'Your Cleaner application has been submitted and is currently pending Admin approval.';
+    }
+  }
+
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'User profile retrieved successfully!',
+    message,
     data: result,
   });
 });
