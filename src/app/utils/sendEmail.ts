@@ -34,6 +34,9 @@ export const sendEmail = async ({ to, subject, html }: ISendEmailOptions) => {
       user: config.smtp_user as string,
       pass: config.smtp_pass as string,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
   });
 
   const mailOptions = {
@@ -49,8 +52,7 @@ export const sendEmail = async ({ to, subject, html }: ISendEmailOptions) => {
     return info;
   } catch (error: any) {
     console.error('❌ [NODEMAILER ERROR] Failed to send email via SMTP:', error?.message || error);
-    // Gracefully handle without throwing 500 error to keep OTP testing flow intact
-    return null;
+    throw new Error(`Failed to deliver OTP email: ${error?.message || 'SMTP server error'}`);
   }
 };
 
@@ -71,7 +73,7 @@ export const generateOTPEmailHTML = (name: string, otp: string) => {
           <div style="display: inline-block; background-color: #f0f7ff; border: 2px dashed #007eff; border-radius: 12px; padding: 16px 36px;">
             <span style="font-size: 36px; font-weight: 800; color: #007eff; letter-spacing: 8px; font-family: monospace;">${otp}</span>
           </div>
-          <p style="color: #dc2626; font-size: 12px; font-weight: 600; margin-top: 12px;">⏳ Note: This code is valid for 5 minutes only.</p>
+          <p style="color: #dc2626; font-size: 12px; font-weight: 600; margin-top: 12px;">Note: This code is valid for 5 minutes only.</p>
         </div>
 
         <p style="color: #475569; font-size: 14px; line-height: 1.6;">If you did not request this verification code, please ignore this message.</p>
