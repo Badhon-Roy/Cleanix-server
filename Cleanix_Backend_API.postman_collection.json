@@ -1,0 +1,446 @@
+{
+  "info": {
+    "_postman_id": "cleanix-backend-api-collection-v1",
+    "name": "Cleanix Backend API Collection",
+    "description": "Comprehensive Postman collection for Cleanix Field & Space Automation Backend API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Registration Email OTP Flow",
+      "item": [
+        {
+          "name": "Step 1: Send Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badhon.cleanix@gmail.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/send-register-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "send-register-otp"]
+            },
+            "description": "Sends a 6-digit OTP verification code to the provided email address before registration."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2: Verify Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badhon.cleanix@gmail.com\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-register-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-register-otp"]
+            },
+            "description": "Verifies the 6-digit OTP code sent to the email address."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3a: Register Customer Account (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && (jsonData.data.accessToken || jsonData.accessToken)) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken || jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Badhon Roy\",\n  \"email\": \"badhon.cleanix@gmail.com\",\n  \"phone\": \"+8801700000000\",\n  \"password\": \"Cleanix@2026\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers a new Customer account after OTP verification."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3b: Register Cleaner Staff Account (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && (jsonData.data.accessToken || jsonData.accessToken)) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken || jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Cleaner\",\n  \"email\": \"alex.cleaner@gmail.com\",\n  \"phone\": \"+8801800000000\",\n  \"password\": \"Cleanix@2026\",\n  \"role\": \"CLEANER\",\n  \"avatar\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"dob\": \"1998-01-22\",\n  \"gender\": \"Male\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers a new Cleaner Staff application with profile details."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3c: Register via Multipart Form-Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && (jsonData.data.accessToken || jsonData.accessToken)) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken || jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "value": "{\"name\":\"Form Data User\",\"email\":\"formdata.user@gmail.com\",\"phone\":\"+8801900000000\",\"password\":\"Cleanix@2026\",\"role\":\"CUSTOMER\"}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registers a user using multipart/form-data format."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication & Profile Management",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && (jsonData.data.accessToken || jsonData.accessToken)) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken || jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badhon.cleanix@gmail.com\",\n  \"password\": \"Cleanix@2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticates user with email and password, setting HTTP-Only cookies and returning access token."
+          },
+          "response": []
+        },
+        {
+          "name": "Google OAuth Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && (jsonData.data.accessToken || jsonData.accessToken)) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken || jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"google.user@gmail.com\",\n  \"name\": \"Google User\",\n  \"avatar\": \"https://lh3.googleusercontent.com/a/default-avatar\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/google-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "google-login"]
+            },
+            "description": "Logs in or registers user via Google OAuth 2.0 payload."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Authenticated User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Fetches current logged-in user profile using Bearer Token or HTTP-Only cookie."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"Cleanix@2026\",\n  \"newPassword\": \"NewCleanixPass@2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Changes password for authenticated user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Forgot & Reset Password Flow",
+      "item": [
+        {
+          "name": "Step 1: Forgot Password (Send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badhon.cleanix@gmail.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Sends password reset OTP code to registered email."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2: Verify Forgot Password OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badhon.cleanix@gmail.com\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            },
+            "description": "Verifies password reset OTP code."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3: Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"badhon.cleanix@gmail.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"ResetCleanixPass@2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Resets user password using verified OTP code."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
