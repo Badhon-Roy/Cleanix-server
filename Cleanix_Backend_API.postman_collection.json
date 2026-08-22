@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "cleanix-backend-api-collection-v2",
+    "_postman_id": "cleanix-backend-api-collection-v3",
     "name": "Cleanix Backend API Collection",
     "description": "Sequential Step-by-Step Postman Collection for Cleanix Field & Space Automation Backend API.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -22,7 +22,7 @@
       "name": "1. Customer Registration Flow (3 Steps)",
       "item": [
         {
-          "name": "Step 1: Account Info - Send Registration OTP",
+          "name": "Step 1: Input Account Info & Send OTP",
           "request": {
             "method": "POST",
             "header": [
@@ -46,12 +46,12 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "send-register-otp"]
             },
-            "description": "Step 1 in Customer Registration: Sends 6-digit OTP verification code to the customer's email address."
+            "description": "1st API Request in Customer Flow: User enters account info on UI and clicks 'Next', triggering 6-digit OTP dispatch to email."
           },
           "response": []
         },
         {
-          "name": "Step 2: Email Verification - Verify OTP",
+          "name": "Step 2: Input 6-Digit OTP & Verify Email",
           "request": {
             "method": "POST",
             "header": [
@@ -75,12 +75,12 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "verify-register-otp"]
             },
-            "description": "Step 2 in Customer Registration: Verifies the 6-digit OTP code sent to the email address."
+            "description": "2nd API Request in Customer Flow: User enters OTP code from email and verifies it."
           },
           "response": []
         },
         {
-          "name": "Step 3: Complete Customer Registration",
+          "name": "Step 3: Create Customer Account in Database",
           "event": [
             {
               "listen": "test",
@@ -133,7 +133,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
             },
-            "description": "Step 3 in Customer Registration: Registers Customer account and logs user in automatically."
+            "description": "3rd API Request in Customer Flow: Once email is verified, posts complete form data to create account in Database."
           },
           "response": []
         }
@@ -143,7 +143,7 @@
       "name": "2. Cleaner Staff Registration Flow (4 Steps)",
       "item": [
         {
-          "name": "Step 1: Account Info - Send Registration OTP",
+          "name": "Step 1: Input Account Info & Send OTP",
           "request": {
             "method": "POST",
             "header": [
@@ -167,12 +167,12 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "send-register-otp"]
             },
-            "description": "Step 1 in Cleaner Registration: Sends 6-digit OTP verification code to cleaner's email address."
+            "description": "1st API Request in Cleaner Flow: User enters account info on UI and clicks 'Next', triggering 6-digit OTP dispatch to email."
           },
           "response": []
         },
         {
-          "name": "Step 2: Email Verification - Verify OTP",
+          "name": "Step 2: Input 6-Digit OTP & Verify Email",
           "request": {
             "method": "POST",
             "header": [
@@ -196,12 +196,12 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "verify-register-otp"]
             },
-            "description": "Step 2 in Cleaner Registration: Verifies 6-digit OTP code."
+            "description": "2nd API Request in Cleaner Flow: User enters OTP code from email and verifies it."
           },
           "response": []
         },
         {
-          "name": "Step 3: Submit Cleaner Application & Profile",
+          "name": "Step 3: Submit Cleaner Profile Application to Database",
           "event": [
             {
               "listen": "test",
@@ -269,7 +269,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
             },
-            "description": "Step 3/4 in Cleaner Registration: Submits complete cleaner profile application with optional avatar photo upload."
+            "description": "3rd API Request in Cleaner Flow: Once email is verified, posts cleaner profile application with avatar to create account in Database."
           },
           "response": []
         }
