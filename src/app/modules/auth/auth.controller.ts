@@ -236,7 +236,31 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendRegisterOTP = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.sendRegisterOTP(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Registration verification OTP sent to your email address successfully!',
+    data: result,
+  });
+});
+
+const verifyRegisterOTP = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.verifyRegisterOTP(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Registration email OTP verified successfully!',
+    data: result,
+  });
+});
+
 export const AuthController = {
+  sendRegisterOTP,
+  verifyRegisterOTP,
   register,
   login,
   googleLogin,

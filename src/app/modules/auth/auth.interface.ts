@@ -47,3 +47,12 @@ export type TResetPassword = {
   otp: string;
   newPassword: string;
 };
+
+export type TSendRegisterOTP = {
+  email: string;
+};
+
+export type TVerifyRegisterOTP = {
+  email: string;
+  otp: string;
+};

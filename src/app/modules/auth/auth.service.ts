@@ -5,6 +5,7 @@ import { User } from '../user/user.model';
 import { Customer } from '../customer/customer.model';
 import { Cleaner } from '../cleaner/cleaner.model';
 import { Admin } from '../admin/admin.model';
+import { EmailVerification } from './emailVerification.model';
 import otpGenerator from 'otp-generator';
 import { sendEmail, generateOTPEmailHTML } from '../../utils/sendEmail';
 import {
@@ -14,14 +15,87 @@ import {
   TLoginUser,
   TRegisterUser,
   TResetPassword,
+  TSendRegisterOTP,
   TVerifyOTP,
+  TVerifyRegisterOTP,
 } from './auth.interface';
 import { createToken } from './auth.utils';
+
+const sendRegisterOTP = async (payload: TSendRegisterOTP) => {
+  const isUserExist = await User.isUserExistsByEmail(payload.email);
+  if (isUserExist) {
+    throw new AppError(400, 'An account with this email address already exists!');
+  }
+
+  const otp = otpGenerator.generate(6, {
+    digits: true,
+    lowerCaseAlphabets: false,
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
+
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes valid
+
+  await EmailVerification.findOneAndUpdate(
+    { email: payload.email.toLowerCase() },
+    {
+      email: payload.email.toLowerCase(),
+      otp,
+      expiresAt,
+      isVerified: false,
+    },
+    { upsert: true, new: true },
+  );
+
+  const html = generateOTPEmailHTML(payload.email.split('@')[0], otp);
+  await sendEmail({
+    to: payload.email,
+    subject: 'Cleanix - Registration Email Verification Code (OTP)',
+    html,
+  });
+
+  return {
+    email: payload.email,
+    expiresAt,
+  };
+};
+
+const verifyRegisterOTP = async (payload: TVerifyRegisterOTP) => {
+  const record = await EmailVerification.findOne({ email: payload.email.toLowerCase() });
+
+  if (!record || record.otp !== payload.otp) {
+    throw new AppError(400, 'Invalid registration verification OTP code!');
+  }
+
+  if (new Date() > new Date(record.expiresAt)) {
+    throw new AppError(400, 'Registration OTP has expired! Please request a new code.');
+  }
+
+  record.isVerified = true;
+  await record.save();
+
+  return {
+    verified: true,
+  };
+};
 
 const registerUser = async (payload: TRegisterUser) => {
   const isUserExist = await User.isUserExistsByEmail(payload.email);
   if (isUserExist) {
     throw new AppError(400, 'User with this email already exists!');
+  }
+
+  // Check if Email was OTP verified
+  const verification = await EmailVerification.findOne({
+    email: payload.email.toLowerCase(),
+    isVerified: true,
+  });
+
+  if (!verification) {
+    throw new AppError(
+      400,
+      'Please verify your email address via OTP code before completing registration!',
+    );
   }
 
   const isCleaner = payload.role === 'CLEANER';
@@ -104,6 +178,9 @@ const registerUser = async (payload: TRegisterUser) => {
 
     await session.commitTransaction();
     await session.endSession();
+
+    // Clean up temporary email verification record
+    await EmailVerification.deleteOne({ email: payload.email.toLowerCase() });
 
     // 3. Issue Access Token & Refresh Token
     const jwtPayload = {
@@ -483,6 +560,8 @@ const resetPassword = async (payload: TResetPassword) => {
 };
 
 export const AuthService = {
+  sendRegisterOTP,
+  verifyRegisterOTP,
   registerUser,
   loginUser,
   googleLogin,

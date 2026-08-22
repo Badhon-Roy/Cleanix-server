@@ -8,6 +8,18 @@ import { upload, parseBodyData } from '../../middlewares/multer';
 const router = Router();
 
 router.post(
+  '/send-register-otp',
+  validateRequest(AuthValidation.sendRegisterOTPValidationSchema),
+  AuthController.sendRegisterOTP,
+);
+
+router.post(
+  '/verify-register-otp',
+  validateRequest(AuthValidation.verifyRegisterOTPValidationSchema),
+  AuthController.verifyRegisterOTP,
+);
+
+router.post(
   '/register',
   upload.single('file'),
   parseBodyData,
