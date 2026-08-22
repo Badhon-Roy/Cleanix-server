@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Model, HydratedDocument } from 'mongoose';
 
 export type TUserRole = 'CUSTOMER' | 'CLEANER' | 'ADMIN';
 export type TUserStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'BLOCKED';
@@ -16,11 +16,14 @@ export interface IUser {
   isDeleted: boolean;
   needsPasswordChange?: boolean;
   passwordChangedAt?: Date;
+  passwordResetOTP?: string;
+  passwordResetExpiresAt?: Date;
+  isOTPVerified?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface UserModel extends Model<IUser> {
-  isUserExistsByEmail(email: string): Promise<IUser | null>;
+  isUserExistsByEmail(email: string): Promise<HydratedDocument<IUser> | null>;
   isPasswordMatched(givenPassword: string, savedPassword?: string): Promise<boolean>;
 }

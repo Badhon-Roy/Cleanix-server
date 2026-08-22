@@ -43,10 +43,34 @@ const changePasswordValidationSchema = z.object({
   }),
 });
 
+const forgotPasswordValidationSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+  }),
+});
+
+const verifyOTPValidationSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    otp: z.string().length(6, 'OTP must be exactly 6 digits'),
+  }),
+});
+
+const resetPasswordValidationSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    otp: z.string().length(6, 'OTP must be exactly 6 digits'),
+    newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+  }),
+});
+
 export const AuthValidation = {
   registerUserValidationSchema,
   loginUserValidationSchema,
   googleLoginValidationSchema,
   refreshTokenValidationSchema,
   changePasswordValidationSchema,
+  forgotPasswordValidationSchema,
+  verifyOTPValidationSchema,
+  resetPasswordValidationSchema,
 };

@@ -203,6 +203,39 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.forgotPassword(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Verification OTP sent to your email address successfully!',
+    data: result,
+  });
+});
+
+const verifyOTP = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.verifyOTP(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'OTP verified successfully!',
+    data: result,
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  await AuthService.resetPassword(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Password reset successfully! Please log in with your new password.',
+    data: null,
+  });
+});
+
 export const AuthController = {
   register,
   login,
@@ -211,4 +244,7 @@ export const AuthController = {
   googleAuthCallback,
   getMe,
   changePassword,
+  forgotPassword,
+  verifyOTP,
+  resetPassword,
 };

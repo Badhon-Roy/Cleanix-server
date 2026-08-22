@@ -52,6 +52,18 @@ const userSchema = new Schema<IUser, UserModel>(
     passwordChangedAt: {
       type: Date,
     },
+    passwordResetOTP: {
+      type: String,
+      select: 0,
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      select: 0,
+    },
+    isOTPVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -77,7 +89,7 @@ userSchema.pre('save', async function () {
 
 // Static method to find user by email
 userSchema.statics.isUserExistsByEmail = async function (email: string) {
-  return await this.findOne({ email, isDeleted: false }).select('+password');
+  return await this.findOne({ email, isDeleted: false }).select('+password +passwordResetOTP +passwordResetExpiresAt');
 };
 
 // Static method to compare password

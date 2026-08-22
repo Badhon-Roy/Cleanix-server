@@ -16,4 +16,9 @@ export default {
   google_client_secret: process.env.GOOGLE_CLIENT_SECRET || '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',
   google_redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/auth/google/callback',
   frontend_url: process.env.FRONTEND_URL || 'http://localhost:3000',
+  smtp_host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  smtp_port: process.env.SMTP_PORT || 587,
+  smtp_user: process.env.SMTP_USER || '',
+  smtp_pass: process.env.SMTP_PASS || '',
+  smtp_from: process.env.SMTP_FROM || 'Cleanix Support <noreply@cleanix.com>',
 };

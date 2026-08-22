@@ -5,7 +5,17 @@ import { User } from '../user/user.model';
 import { Customer } from '../customer/customer.model';
 import { Cleaner } from '../cleaner/cleaner.model';
 import { Admin } from '../admin/admin.model';
-import { TChangePassword, TGoogleLoginUser, TLoginUser, TRegisterUser } from './auth.interface';
+import otpGenerator from 'otp-generator';
+import { sendEmail, generateOTPEmailHTML } from '../../utils/sendEmail';
+import {
+  TChangePassword,
+  TForgotPassword,
+  TGoogleLoginUser,
+  TLoginUser,
+  TRegisterUser,
+  TResetPassword,
+  TVerifyOTP,
+} from './auth.interface';
 import { createToken } from './auth.utils';
 
 const registerUser = async (payload: TRegisterUser) => {
@@ -387,10 +397,98 @@ const changePassword = async (userId: string, payload: TChangePassword) => {
   return null;
 };
 
+const forgotPassword = async (payload: TForgotPassword) => {
+  const user = await User.isUserExistsByEmail(payload.email);
+  if (!user || user.isDeleted) {
+    throw new AppError(404, 'No user account found with this email address!');
+  }
+
+  if (user.status === 'BLOCKED') {
+    throw new AppError(403, 'Your account has been blocked by Admin!');
+  }
+
+  // Generate 6-digit OTP
+  const otp = otpGenerator.generate(6, {
+    digits: true,
+    lowerCaseAlphabets: false,
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
+
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes valid
+
+  user.passwordResetOTP = otp;
+  user.passwordResetExpiresAt = expiresAt;
+  user.isOTPVerified = false;
+  await user.save();
+
+  // Send OTP Email
+  const html = generateOTPEmailHTML(user.name || 'User', otp);
+  await sendEmail({
+    to: user.email,
+    subject: 'Cleanix - Password Reset Verification Code (OTP)',
+    html,
+  });
+
+  return {
+    email: user.email,
+    expiresAt,
+  };
+};
+
+const verifyOTP = async (payload: TVerifyOTP) => {
+  const user = await User.isUserExistsByEmail(payload.email);
+  if (!user || user.isDeleted) {
+    throw new AppError(404, 'No user account found with this email address!');
+  }
+
+  if (!user.passwordResetOTP || user.passwordResetOTP !== payload.otp) {
+    throw new AppError(400, 'Invalid verification OTP!');
+  }
+
+  if (!user.passwordResetExpiresAt || new Date() > new Date(user.passwordResetExpiresAt)) {
+    throw new AppError(400, 'Verification OTP has expired! Please request a new OTP.');
+  }
+
+  user.isOTPVerified = true;
+  await user.save();
+
+  return {
+    verified: true,
+  };
+};
+
+const resetPassword = async (payload: TResetPassword) => {
+  const user = await User.isUserExistsByEmail(payload.email);
+  if (!user || user.isDeleted) {
+    throw new AppError(404, 'No user account found with this email address!');
+  }
+
+  if (!user.passwordResetOTP || user.passwordResetOTP !== payload.otp) {
+    throw new AppError(400, 'Invalid verification OTP!');
+  }
+
+  if (!user.passwordResetExpiresAt || new Date() > new Date(user.passwordResetExpiresAt)) {
+    throw new AppError(400, 'Verification OTP has expired! Please request a new OTP.');
+  }
+
+  user.password = payload.newPassword;
+  user.passwordResetOTP = undefined;
+  user.passwordResetExpiresAt = undefined;
+  user.isOTPVerified = false;
+  user.passwordChangedAt = new Date();
+  await user.save();
+
+  return null;
+};
+
 export const AuthService = {
   registerUser,
   loginUser,
   googleLogin,
   getMe,
   changePassword,
+  forgotPassword,
+  verifyOTP,
+  resetPassword,
 };
