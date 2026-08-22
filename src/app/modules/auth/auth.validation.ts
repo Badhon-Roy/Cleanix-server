@@ -1,27 +1,52 @@
 import { z } from 'zod';
 
-const loginValidationSchema = z.object({
+const registerUserValidationSchema = z.object({
   body: z.object({
-    email: z.string({ message: 'Email is required' }).email(),
-    password: z.string({ message: 'Password is required' }),
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().min(6, 'Phone number is required'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    role: z.enum(['CUSTOMER', 'CLEANER', 'ADMIN']).default('CUSTOMER'),
+    avatar: z.string().optional().nullable(),
+    dob: z.string().optional().nullable(),
+    gender: z.enum(['Male', 'Female', 'Other']).optional().nullable(),
+  }),
+});
+
+const loginUserValidationSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(1, 'Password is required'),
+  }),
+});
+
+const googleLoginValidationSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    name: z.string().optional(),
+    avatar: z.string().optional().nullable(),
+    role: z.enum(['CUSTOMER', 'CLEANER', 'ADMIN']).optional(),
+    phone: z.string().optional(),
   }),
 });
 
 const refreshTokenValidationSchema = z.object({
   cookies: z.object({
-    refreshToken: z.string({ message: 'Refresh token is required' }),
+    refreshToken: z.string().min(1, 'Refresh token is required'),
   }),
 });
 
 const changePasswordValidationSchema = z.object({
   body: z.object({
-    oldPassword: z.string({ message: 'Old password is required' }),
-    newPassword: z.string({ message: 'New password is required' }),
+    oldPassword: z.string().min(1, 'Old password is required'),
+    newPassword: z.string().min(6, 'New password must be at least 6 characters'),
   }),
 });
 
 export const AuthValidation = {
-  loginValidationSchema,
+  registerUserValidationSchema,
+  loginUserValidationSchema,
+  googleLoginValidationSchema,
   refreshTokenValidationSchema,
   changePasswordValidationSchema,
 };

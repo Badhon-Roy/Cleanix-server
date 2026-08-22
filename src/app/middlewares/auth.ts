@@ -6,12 +6,20 @@ import catchAsync from '../utils/catchAsync';
 
 const auth = (...requiredRoles: string[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.headers.authorization?.split(' ')[1] || req.headers.authorization;
+    // 1. Extract token from HttpOnly cookie OR Authorization Bearer Header
+    let token = req.cookies?.accessToken;
 
-    if (!token) {
-      throw new AppError(401, 'You are not authorized!');
+    if (!token && req.headers.authorization) {
+      token = req.headers.authorization.startsWith('Bearer ')
+        ? req.headers.authorization.split(' ')[1]
+        : req.headers.authorization;
     }
 
+    if (!token) {
+      throw new AppError(401, 'You are not authorized! Token is missing.');
+    }
+
+    // 2. Verify Token
     const decoded = jwt.verify(
       token,
       config.jwt_access_secret as string,
