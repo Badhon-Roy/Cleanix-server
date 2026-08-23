@@ -61,3 +61,15 @@ export const emitServiceUpdated = (data?: any) => {
     io.emit('service_catalog_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitBookingCreated = (data?: any) => {
+  if (io) {
+    io.emit('booking_created', data || { timestamp: Date.now() });
+  }
+};
+
+export const emitBookingUpdated = (data?: any) => {
+  if (io) {
+    io.emit('booking_updated', data || { timestamp: Date.now() });
+  }
+};

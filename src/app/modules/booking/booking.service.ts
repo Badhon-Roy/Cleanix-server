@@ -3,6 +3,7 @@ import { Booking } from './booking.model';
 import AppError from '../../errors/AppError';
 import { Addon } from '../addon/addon.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
+import { emitBookingCreated, emitBookingUpdated } from '../../socket/socket';
 
 export const calculateBookingPrice = async (payload: {
   serviceSlug?: string;
@@ -202,10 +203,14 @@ const createBooking = async (userId: string, payload: any) => {
   });
 
   // Return populated
-  return await Booking.findById(newBooking._id)
+  const populatedDoc = await Booking.findById(newBooking._id)
     .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('locationId');
+
+  emitBookingCreated(populatedDoc);
+
+  return populatedDoc;
 };
 
 const getMyBookings = async (userId: string) => {
@@ -256,10 +261,14 @@ const updateBookingStatusAdmin = async (
   }
 
   await booking.save();
-  return await Booking.findById(booking._id)
+  const updatedDoc = await Booking.findById(booking._id)
     .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('locationId');
+
+  emitBookingUpdated(updatedDoc);
+
+  return updatedDoc;
 };
 
 const cancelBooking = async (userId: string, bookingId: string) => {
@@ -275,6 +284,8 @@ const cancelBooking = async (userId: string, bookingId: string) => {
 
   booking.status = 'CANCELLED';
   await booking.save();
+
+  emitBookingUpdated(booking);
 
   return booking;
 };
