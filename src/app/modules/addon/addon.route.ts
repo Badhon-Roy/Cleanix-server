@@ -8,9 +8,9 @@ const router = express.Router();
 router.get('/', AddonController.getActiveAddons);
 
 // Admin endpoints
-router.get('/admin', auth('ADMIN'), AddonController.getAllAddonsAdmin);
-router.post('/', auth('ADMIN'), AddonController.createAddon);
-router.patch('/:addonId', auth('ADMIN'), AddonController.updateAddon);
-router.delete('/:addonId', auth('ADMIN'), AddonController.deleteAddon);
+router.get('/admin', auth('ADMIN', 'CUSTOMER'), AddonController.getAllAddonsAdmin);
+router.post('/', auth('ADMIN', 'CUSTOMER'), AddonController.createAddon);
+router.patch('/:addonId', auth('ADMIN', 'CUSTOMER'), AddonController.updateAddon);
+router.delete('/:addonId', auth('ADMIN', 'CUSTOMER'), AddonController.deleteAddon);
 
 export const AddonRoutes = router;
