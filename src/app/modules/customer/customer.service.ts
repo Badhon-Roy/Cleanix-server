@@ -6,15 +6,30 @@ import AppError from '../../errors/AppError';
 
 const formatCustomerResponse = (customerDoc: any) => {
   const customerObj = customerDoc.toObject ? customerDoc.toObject() : customerDoc;
-  const isVip = (customerObj.totalBookings || 0) >= 5 || (customerObj.spentAmount || 0) >= 500;
-  
+  const isVip = (customerObj.totalBookings || 0) >= 5 || customerObj.subscriptionPlan === 'VIP';
+  const hasActiveSub =
+    customerObj.subscriptionStatus === 'ACTIVE' ||
+    (customerObj.subscriptionPlan && customerObj.subscriptionPlan !== 'NONE');
+
+  let badge = 'Free Member';
+  let planText = 'No Active Subscription (Free Account)';
+
+  if (isVip) {
+    badge = 'VIP Subscriber';
+    planText = 'VIP Subscription (Active Plan)';
+  } else if (hasActiveSub) {
+    const planName = customerObj.subscriptionPlan || 'Standard';
+    badge = `${planName} Subscriber`;
+    planText = `${planName} Subscription (Active Plan)`;
+  }
+
   const createdAtDate = customerObj.createdAt ? new Date(customerObj.createdAt) : new Date();
   const memberSince = `Member since ${createdAtDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
 
   return {
     ...customerObj,
-    membershipBadge: isVip ? 'VIP Subscriber' : 'Customer Member',
-    membershipPlan: isVip ? 'Subscriber VIP (Monthly Active)' : 'Standard Customer (Active Account)',
+    membershipBadge: badge,
+    membershipPlan: planText,
     memberSince,
   };
 };

@@ -46,6 +46,16 @@ const customerSchema = new Schema<ICustomer>(
       type: Number,
       default: 0,
     },
+    subscriptionPlan: {
+      type: String,
+      enum: ['NONE', 'STANDARD', 'PREMIUM', 'VIP'],
+      default: 'NONE',
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ['INACTIVE', 'ACTIVE'],
+      default: 'INACTIVE',
+    },
     isDeleted: {
       type: Boolean,
       default: false,
