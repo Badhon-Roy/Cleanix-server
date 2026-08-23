@@ -5,6 +5,7 @@ import { ServiceCategoryController } from './servicecategory.controller';
 const router = express.Router();
 
 router.get('/active', ServiceCategoryController.getActiveServices);
+router.get('/overview', auth('ADMIN', 'CUSTOMER'), ServiceCategoryController.getCatalogOverview);
 router.get('/slug/:slug', ServiceCategoryController.getSingleServiceBySlug);
 
 router.get('/admin', auth('ADMIN', 'CUSTOMER'), ServiceCategoryController.getAllServicesAdmin);

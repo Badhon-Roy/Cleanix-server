@@ -107,10 +107,61 @@ const deleteService = async (serviceId: string): Promise<null> => {
   return null;
 };
 
+const getCatalogOverview = async () => {
+  const allServices = await ServiceCategory.find({ isDeleted: false });
+  const activeServicesList = allServices.filter((s) => s.status === 'ACTIVE');
+
+  const totalServices = allServices.length;
+  const activeServices = activeServicesList.length;
+
+  let minPrice = 3500;
+  if (activeServicesList.length > 0) {
+    const prices = activeServicesList
+      .map((s) => {
+        const num = parseFloat(String(s.price).replace(/[^0-9.]/g, ''));
+        return isNaN(num) || num <= 0 ? null : num;
+      })
+      .filter((p): p is number => p !== null);
+
+    if (prices.length > 0) {
+      minPrice = Math.min(...prices);
+    }
+  }
+  const startingRate = `৳${minPrice.toLocaleString()}`;
+
+  let avgSlaResponse = '25-30 Mins';
+  const slaNumbers: number[] = [];
+  activeServicesList.forEach((s) => {
+    if (s.slaTime) {
+      const matches = s.slaTime.match(/\d+/g);
+      if (matches) {
+        matches.forEach((m) => {
+          const num = parseInt(m, 10);
+          if (!isNaN(num) && num > 0) slaNumbers.push(num);
+        });
+      }
+    }
+  });
+
+  if (slaNumbers.length > 0) {
+    const minSla = Math.min(...slaNumbers);
+    const maxSla = Math.max(...slaNumbers);
+    avgSlaResponse = minSla === maxSla ? `${minSla} Mins` : `${minSla}-${maxSla} Mins`;
+  }
+
+  return {
+    totalServices,
+    activeServices,
+    startingRate,
+    avgSlaResponse,
+  };
+};
+
 export const ServiceCategoryService = {
   getActiveServices,
   getAllServicesAdmin,
   getSingleServiceBySlug,
+  getCatalogOverview,
   createService,
   updateService,
   deleteService,

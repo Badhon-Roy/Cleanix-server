@@ -72,10 +72,22 @@ const deleteService = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCatalogOverview = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceCategoryService.getCatalogOverview();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Service catalog overview statistics retrieved successfully!',
+    data: result,
+  });
+});
+
 export const ServiceCategoryController = {
   getActiveServices,
   getAllServicesAdmin,
   getSingleServiceBySlug,
+  getCatalogOverview,
   createService,
   updateService,
   deleteService,
