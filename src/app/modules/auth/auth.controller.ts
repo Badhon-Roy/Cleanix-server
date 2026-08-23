@@ -175,7 +175,7 @@ const googleAuthCallback = catchAsync(async (req: Request, res: Response) => {
   });
 
   // 4. Redirect to Frontend Auth Callback Page
-  const frontendCallbackUrl = `${config.frontend_url}/auth/callback?token=${accessToken}&role=${user.role}&status=${user.status}&isApproved=${user.isApproved}`;
+  const frontendCallbackUrl = `${config.frontend_url}/auth/callback?token=${accessToken}&role=${user.role}&status=${user.status}&isApproved=${user.isApproved}&message=${encodeURIComponent('Google login successful!')}`;
   res.redirect(frontendCallbackUrl);
 });
 

@@ -10,9 +10,12 @@ try {
   // Fallback if environment doesn't allow setting custom DNS
 }
 
+import { seedAdmin } from './app/DB/seedAdmin';
+
 async function main() {
   try {
     await mongoose.connect(config.db_url as string);
+    await seedAdmin();
     app.listen(config.port, () => {
       console.log(`🚀 Cleanix app listening on port ${config.port}`);
     });
