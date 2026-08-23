@@ -3,70 +3,12 @@ import { IAddon } from './addon.interface';
 import AppError from '../../errors/AppError';
 import { emitAddonUpdated } from '../../socket/socket';
 
-// Initial default seed dataset if DB is empty
-const defaultInitialAddons = [
-  {
-    slug: 'sofa',
-    name: 'Sofa & Carpet Wash',
-    subLabel: 'শ্যাম্পু ওয়াশ ও ডিপ মেট্রেস ড্রায়ার',
-    price: 2000,
-    tag: 'MOST POPULAR',
-    iconName: 'sofa',
-    active: true,
-  },
-  {
-    slug: 'oven',
-    name: 'Kitchen Oven & Chimney',
-    subLabel: 'ওভেন ও কিচেন চিমনি গ্রিজ ওয়াশ',
-    price: 1200,
-    tag: 'KITCHEN CARE',
-    iconName: 'oven',
-    active: true,
-  },
-  {
-    slug: 'fridge',
-    name: 'Refrigerator Deep Clean',
-    subLabel: 'ফ্রিজ অ্যান্টি-ব্যাকটেরিয়াল স্যানিটাইজ',
-    price: 1000,
-    tag: 'HYGIENE',
-    iconName: 'fridge',
-    active: true,
-  },
-  {
-    slug: 'window',
-    name: 'Glass & Window Polish',
-    subLabel: 'ইনটেরিয়র গ্লাস ও উইন্ডো স্যানিটাইজিং',
-    price: 800,
-    tag: 'SHINE CARE',
-    iconName: 'window',
-    active: true,
-  },
-  {
-    slug: 'pet',
-    name: 'Pet Hygiene & Odor Clean',
-    subLabel: 'পেট হেয়ার ও গন্ধ দূরীকরণ ট্রিমেন্ট',
-    price: 1500,
-    tag: 'PET CARE',
-    iconName: 'pet',
-    active: true,
-  },
-];
-
-const seedAddonsIfEmpty = async () => {
-  const count = await Addon.countDocuments({ isDeleted: false });
-  if (count === 0) {
-    await Addon.insertMany(defaultInitialAddons);
-  }
-};
-
 const getActiveAddons = async () => {
-  await seedAddonsIfEmpty();
   const addons = await Addon.find({ active: true, isDeleted: false }).sort({ createdAt: 1 });
   return addons;
 };
 
 const getAllAddonsAdmin = async () => {
-  await seedAddonsIfEmpty();
   const addons = await Addon.find({ isDeleted: false }).sort({ createdAt: 1 });
   return addons;
 };
