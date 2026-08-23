@@ -1,6 +1,5 @@
 import { Types } from 'mongoose';
 import { Booking } from './booking.model';
-import { IBooking } from './booking.interface';
 import AppError from '../../errors/AppError';
 import { NewBookingPricingService } from '../newbookingpricing/newbookingpricing.service';
 import { Addon } from '../addon/addon.model';
