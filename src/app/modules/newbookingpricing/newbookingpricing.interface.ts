@@ -1,4 +1,4 @@
-export interface IPricingConfig {
+export interface INewBookingPricing {
   _id?: string;
   baseFee: number;
   sqftRate: number;

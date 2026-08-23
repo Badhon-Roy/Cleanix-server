@@ -1,9 +1,9 @@
 import { Booking } from './booking.model';
 import { IBooking } from './booking.interface';
 import AppError from '../../errors/AppError';
-import { PricingService } from '../pricing/pricing.service';
+import { NewBookingPricingService } from '../newbookingpricing/newbookingpricing.service';
 import { Addon } from '../addon/addon.model';
-import { Service } from '../service/service.model';
+import { ServiceCategory } from '../servicecategory/servicecategory.model';
 
 const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   const sqft = payload.sqft && payload.sqft > 0 ? payload.sqft : 1200;
@@ -12,12 +12,12 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   const selectedAddons = payload.selectedAddons || [];
 
   // Fetch live pricing multipliers configured by Admin
-  const pricingConfig = await PricingService.getPricingConfig();
+  const pricingConfig = await NewBookingPricingService.getPricingConfig();
 
   // Dynamic Base Fee from selected Service Category Starting Rate (fallback to pricingConfig.baseFee)
   let baseFee = pricingConfig.baseFee || 1500;
   if (payload.serviceType) {
-    const selectedServiceCategory = await Service.findOne({
+    const selectedServiceCategory = await ServiceCategory.findOne({
       $or: [{ slug: payload.serviceType }, { category: payload.serviceType }],
       isDeleted: false,
     });

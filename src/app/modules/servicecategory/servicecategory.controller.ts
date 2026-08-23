@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import { CoreService } from './service.service';
+import { ServiceCategoryService } from './servicecategory.service';
 
 const getActiveServices = catchAsync(async (req: Request, res: Response) => {
-  const result = await CoreService.getActiveServices();
+  const result = await ServiceCategoryService.getActiveServices();
 
   sendResponse(res, {
     statusCode: 200,
@@ -15,7 +15,7 @@ const getActiveServices = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllServicesAdmin = catchAsync(async (req: Request, res: Response) => {
-  const result = await CoreService.getAllServicesAdmin();
+  const result = await ServiceCategoryService.getAllServicesAdmin();
 
   sendResponse(res, {
     statusCode: 200,
@@ -27,7 +27,7 @@ const getAllServicesAdmin = catchAsync(async (req: Request, res: Response) => {
 
 const getSingleServiceBySlug = catchAsync(async (req: Request, res: Response) => {
   const { slug } = req.params;
-  const result = await CoreService.getSingleServiceBySlug(slug as string);
+  const result = await ServiceCategoryService.getSingleServiceBySlug(slug as string);
 
   sendResponse(res, {
     statusCode: 200,
@@ -38,7 +38,7 @@ const getSingleServiceBySlug = catchAsync(async (req: Request, res: Response) =>
 });
 
 const createService = catchAsync(async (req: Request, res: Response) => {
-  const result = await CoreService.createService(req.body);
+  const result = await ServiceCategoryService.createService(req.body);
 
   sendResponse(res, {
     statusCode: 201,
@@ -50,7 +50,7 @@ const createService = catchAsync(async (req: Request, res: Response) => {
 
 const updateService = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await CoreService.updateService(id as string, req.body);
+  const result = await ServiceCategoryService.updateService(id as string, req.body);
 
   sendResponse(res, {
     statusCode: 200,
@@ -62,7 +62,7 @@ const updateService = catchAsync(async (req: Request, res: Response) => {
 
 const deleteService = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  await CoreService.deleteService(id as string);
+  await ServiceCategoryService.deleteService(id as string);
 
   sendResponse(res, {
     statusCode: 200,
@@ -72,7 +72,7 @@ const deleteService = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-export const ServiceController = {
+export const ServiceCategoryController = {
   getActiveServices,
   getAllServicesAdmin,
   getSingleServiceBySlug,

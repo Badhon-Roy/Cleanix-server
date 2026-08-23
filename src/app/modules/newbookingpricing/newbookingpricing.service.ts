@@ -1,11 +1,11 @@
-import { PricingConfig } from './pricing.model';
-import { IPricingConfig } from './pricing.interface';
+import { NewBookingPricing } from './newbookingpricing.model';
+import { INewBookingPricing } from './newbookingpricing.interface';
 import { emitPricingUpdated } from '../../socket/socket';
 
-const seedPricingIfEmpty = async (): Promise<IPricingConfig> => {
-  let config = await PricingConfig.findOne();
+const seedPricingIfEmpty = async (): Promise<INewBookingPricing> => {
+  let config = await NewBookingPricing.findOne();
   if (!config) {
-    config = await PricingConfig.create({
+    config = await NewBookingPricing.create({
       baseFee: 1500,
       sqftRate: 2.5,
       bedroomRate: 500,
@@ -15,15 +15,17 @@ const seedPricingIfEmpty = async (): Promise<IPricingConfig> => {
   return config;
 };
 
-const getPricingConfig = async (): Promise<IPricingConfig> => {
+const getPricingConfig = async (): Promise<INewBookingPricing> => {
   const config = await seedPricingIfEmpty();
   return config;
 };
 
-const updatePricingConfig = async (payload: Partial<IPricingConfig>): Promise<IPricingConfig> => {
-  let config = await PricingConfig.findOne();
+const updatePricingConfig = async (
+  payload: Partial<INewBookingPricing>,
+): Promise<INewBookingPricing> => {
+  let config = await NewBookingPricing.findOne();
   if (!config) {
-    config = await PricingConfig.create({
+    config = await NewBookingPricing.create({
       baseFee: payload.baseFee ?? 1500,
       sqftRate: payload.sqftRate ?? 2.5,
       bedroomRate: payload.bedroomRate ?? 500,
@@ -42,7 +44,7 @@ const updatePricingConfig = async (payload: Partial<IPricingConfig>): Promise<IP
   return config;
 };
 
-export const PricingService = {
+export const NewBookingPricingService = {
   getPricingConfig,
   updatePricingConfig,
 };

@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { IService } from './service.interface';
+import { IServiceCategory } from './servicecategory.interface';
 
-const serviceSchema = new Schema<IService>(
+const serviceCategorySchema = new Schema<IServiceCategory>(
   {
     slug: { type: String, required: true, unique: true },
     title: { type: String, required: true },
@@ -49,4 +49,8 @@ const serviceSchema = new Schema<IService>(
   },
 );
 
-export const Service = model<IService>('Service', serviceSchema);
+export const ServiceCategory = model<IServiceCategory>(
+  'ServiceCategory',
+  serviceCategorySchema,
+  'servicecategory',
+);

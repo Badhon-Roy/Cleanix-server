@@ -1,5 +1,5 @@
-import { Service } from './service.model';
-import { IService } from './service.interface';
+import { ServiceCategory } from './servicecategory.model';
+import { IServiceCategory } from './servicecategory.interface';
 import AppError from '../../errors/AppError';
 import { emitServiceUpdated } from '../../socket/socket';
 
@@ -75,34 +75,36 @@ const defaultInitialServices = [
 ];
 
 const seedServicesIfEmpty = async () => {
-  const count = await Service.countDocuments({ isDeleted: false });
+  const count = await ServiceCategory.countDocuments({ isDeleted: false });
   if (count === 0) {
-    await Service.insertMany(defaultInitialServices);
+    await ServiceCategory.insertMany(defaultInitialServices);
   }
 };
 
-const getActiveServices = async (): Promise<IService[]> => {
+const getActiveServices = async (): Promise<IServiceCategory[]> => {
   await seedServicesIfEmpty();
-  const services = await Service.find({ status: 'ACTIVE', isDeleted: false }).sort({ createdAt: 1 });
+  const services = await ServiceCategory.find({ status: 'ACTIVE', isDeleted: false }).sort({
+    createdAt: 1,
+  });
   return services;
 };
 
-const getAllServicesAdmin = async (): Promise<IService[]> => {
+const getAllServicesAdmin = async (): Promise<IServiceCategory[]> => {
   await seedServicesIfEmpty();
-  const services = await Service.find({ isDeleted: false }).sort({ createdAt: 1 });
+  const services = await ServiceCategory.find({ isDeleted: false }).sort({ createdAt: 1 });
   return services;
 };
 
-const getSingleServiceBySlug = async (slug: string): Promise<IService> => {
+const getSingleServiceBySlug = async (slug: string): Promise<IServiceCategory> => {
   await seedServicesIfEmpty();
-  const service = await Service.findOne({ slug, isDeleted: false });
+  const service = await ServiceCategory.findOne({ slug, isDeleted: false });
   if (!service) {
-    throw new AppError(404, 'Service offering not found!');
+    throw new AppError(404, 'Service category not found!');
   }
   return service;
 };
 
-const createService = async (payload: Partial<IService>): Promise<IService> => {
+const createService = async (payload: Partial<IServiceCategory>): Promise<IServiceCategory> => {
   if (!payload.title || !payload.shortDesc) {
     throw new AppError(400, 'Service title and short description are required!');
   }
@@ -114,12 +116,12 @@ const createService = async (payload: Partial<IService>): Promise<IService> => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-  const existing = await Service.findOne({ slug, isDeleted: false });
+  const existing = await ServiceCategory.findOne({ slug, isDeleted: false });
   if (existing) {
     throw new AppError(400, 'A service category with this title or slug already exists!');
   }
 
-  const newService = await Service.create({
+  const newService = await ServiceCategory.create({
     slug,
     title: payload.title,
     category: (payload.category || 'HOME CARE').toUpperCase(),
@@ -141,8 +143,11 @@ const createService = async (payload: Partial<IService>): Promise<IService> => {
   return newService;
 };
 
-const updateService = async (serviceId: string, payload: Partial<IService>): Promise<IService> => {
-  const service = await Service.findOne({
+const updateService = async (
+  serviceId: string,
+  payload: Partial<IServiceCategory>,
+): Promise<IServiceCategory> => {
+  const service = await ServiceCategory.findOne({
     $or: [{ _id: serviceId }, { slug: serviceId }],
     isDeleted: false,
   });
@@ -151,7 +156,7 @@ const updateService = async (serviceId: string, payload: Partial<IService>): Pro
     throw new AppError(404, 'Service category not found!');
   }
 
-  const updatedService = await Service.findOneAndUpdate(
+  const updatedService = await ServiceCategory.findOneAndUpdate(
     { _id: service._id, isDeleted: false },
     { $set: payload },
     { new: true, runValidators: true },
@@ -167,7 +172,7 @@ const updateService = async (serviceId: string, payload: Partial<IService>): Pro
 };
 
 const deleteService = async (serviceId: string): Promise<null> => {
-  const service = await Service.findOne({
+  const service = await ServiceCategory.findOne({
     $or: [{ _id: serviceId }, { slug: serviceId }],
     isDeleted: false,
   });
@@ -176,14 +181,14 @@ const deleteService = async (serviceId: string): Promise<null> => {
     throw new AppError(404, 'Service category not found!');
   }
 
-  await Service.findOneAndUpdate({ _id: service._id }, { isDeleted: true });
+  await ServiceCategory.findOneAndUpdate({ _id: service._id }, { isDeleted: true });
 
   emitServiceUpdated({ action: 'delete', serviceId: service._id });
 
   return null;
 };
 
-export const CoreService = {
+export const ServiceCategoryService = {
   getActiveServices,
   getAllServicesAdmin,
   getSingleServiceBySlug,

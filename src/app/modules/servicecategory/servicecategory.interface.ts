@@ -15,7 +15,7 @@ export interface IServiceFaqItem {
   answer: string;
 }
 
-export interface IService {
+export interface IServiceCategory {
   _id?: string;
   slug: string;
   title: string;

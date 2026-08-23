@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
-import { IPricingConfig } from './pricing.interface';
+import { INewBookingPricing } from './newbookingpricing.interface';
 
-const pricingConfigSchema = new Schema<IPricingConfig>(
+const newBookingPricingSchema = new Schema<INewBookingPricing>(
   {
     baseFee: { type: Number, required: true, default: 1500 },
     sqftRate: { type: Number, required: true, default: 2.5 },
@@ -13,4 +13,8 @@ const pricingConfigSchema = new Schema<IPricingConfig>(
   },
 );
 
-export const PricingConfig = model<IPricingConfig>('PricingConfig', pricingConfigSchema, 'newbookingpricing');
+export const NewBookingPricing = model<INewBookingPricing>(
+  'NewBookingPricing',
+  newBookingPricingSchema,
+  'newbookingpricing',
+);

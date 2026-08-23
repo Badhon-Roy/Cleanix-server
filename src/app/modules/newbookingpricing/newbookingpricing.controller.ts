@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import { PricingService } from './pricing.service';
+import { NewBookingPricingService } from './newbookingpricing.service';
 
 const getPricingConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await PricingService.getPricingConfig();
+  const result = await NewBookingPricingService.getPricingConfig();
 
   sendResponse(res, {
     statusCode: 200,
@@ -15,7 +15,7 @@ const getPricingConfig = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updatePricingConfig = catchAsync(async (req: Request, res: Response) => {
-  const result = await PricingService.updatePricingConfig(req.body);
+  const result = await NewBookingPricingService.updatePricingConfig(req.body);
 
   sendResponse(res, {
     statusCode: 200,
@@ -25,7 +25,7 @@ const updatePricingConfig = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-export const PricingController = {
+export const NewBookingPricingController = {
   getPricingConfig,
   updatePricingConfig,
 };

@@ -4,8 +4,8 @@ import { CustomerRoutes } from '../modules/customer/customer.route';
 import { LocationRoutes } from '../modules/location/location.route';
 import { BookingRoutes } from '../modules/booking/booking.route';
 import { AddonRoutes } from '../modules/addon/addon.route';
-import { PricingRoutes } from '../modules/pricing/pricing.route';
-import { ServiceCategoryRoutes } from '../modules/service/service.route';
+import { NewBookingPricingRoutes } from '../modules/newbookingpricing/newbookingpricing.route';
+import { ServiceCategoryRoutes } from '../modules/servicecategory/servicecategory.route';
 
 const router = Router();
 
@@ -32,7 +32,7 @@ const moduleRoutes = [
   },
   {
     path: '/pricing',
-    route: PricingRoutes,
+    route: NewBookingPricingRoutes,
   },
   {
     path: '/services',
