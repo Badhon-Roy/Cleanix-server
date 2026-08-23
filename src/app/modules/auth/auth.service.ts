@@ -287,6 +287,7 @@ const loginUser = async (payload: TLoginUser) => {
       role: user.role,
       status: user.status,
       isApproved: user.isApproved,
+      avatar: (profile as any)?.avatar || undefined,
       profile,
     },
   };
@@ -382,13 +383,18 @@ const googleLogin = async (payload: TGoogleLoginUser) => {
   }
 
   // Fetch profile
-  let profile = null;
+  let profile: any = null;
   if (user.role === 'CUSTOMER') {
     profile = await Customer.findOne({ user: user._id, isDeleted: false });
   } else if (user.role === 'CLEANER') {
     profile = await Cleaner.findOne({ user: user._id, isDeleted: false });
   } else if (user.role === 'ADMIN') {
     profile = await Admin.findOne({ user: user._id, isDeleted: false });
+  }
+
+  if (profile && payload.avatar && !profile.avatar) {
+    profile.avatar = payload.avatar;
+    await profile.save();
   }
 
   const jwtPayload = {
@@ -420,6 +426,7 @@ const googleLogin = async (payload: TGoogleLoginUser) => {
       role: user.role,
       status: user.status,
       isApproved: user.isApproved,
+      avatar: profile?.avatar || payload.avatar || undefined,
       profile,
     },
   };
@@ -431,7 +438,7 @@ const getMe = async (userId: string, role: string) => {
     throw new AppError(404, 'User profile not found!');
   }
 
-  let profile = null;
+  let profile: any = null;
   if (role === 'CUSTOMER') {
     profile = await Customer.findOne({ user: userId, isDeleted: false });
   } else if (role === 'CLEANER') {
@@ -448,6 +455,7 @@ const getMe = async (userId: string, role: string) => {
     role: user.role,
     status: user.status,
     isApproved: user.isApproved,
+    avatar: profile?.avatar || undefined,
     profile,
   };
 };
