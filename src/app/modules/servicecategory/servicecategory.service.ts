@@ -81,8 +81,12 @@ const updateService = async (
   serviceId: string,
   payload: Partial<IServiceCategory>,
 ): Promise<IServiceCategory> => {
+  const isObjectId = serviceId && serviceId.match(/^[0-9a-fA-F]{24}$/);
   const service = await ServiceCategory.findOne({
-    $or: [{ _id: serviceId }, { slug: serviceId }],
+    $or: [
+      { slug: serviceId },
+      ...(isObjectId ? [{ _id: serviceId }] : []),
+    ],
     isDeleted: false,
   });
 
@@ -106,8 +110,12 @@ const updateService = async (
 };
 
 const deleteService = async (serviceId: string): Promise<null> => {
+  const isObjectId = serviceId && serviceId.match(/^[0-9a-fA-F]{24}$/);
   const service = await ServiceCategory.findOne({
-    $or: [{ _id: serviceId }, { slug: serviceId }],
+    $or: [
+      { slug: serviceId },
+      ...(isObjectId ? [{ _id: serviceId }] : []),
+    ],
     isDeleted: false,
   });
 

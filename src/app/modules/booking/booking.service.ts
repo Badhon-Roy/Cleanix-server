@@ -44,12 +44,8 @@ export const calculateBookingPrice = async (payload: {
     }
   }
 
-  // Calculate Field Costs (Predefined & Custom Fields)
+  // Calculate Field Costs dynamically for all enabled fields in categoryFields
   let customFieldsTotal = 0;
-  let sqftCost = 0;
-  let bedroomCost = 0;
-  let bathroomCost = 0;
-
   const customFieldsBreakdown: {
     fieldId: string;
     label: string;
@@ -84,10 +80,6 @@ export const calculateBookingPrice = async (payload: {
       }
     }
 
-    if (field.id === 'sqft') sqftCost = fieldCost;
-    if (field.id === 'bedrooms') bedroomCost = fieldCost;
-    if (field.id === 'bathrooms') bathroomCost = fieldCost;
-
     customFieldsTotal += fieldCost;
     customFieldsBreakdown.push({
       fieldId: field.id,
@@ -96,13 +88,6 @@ export const calculateBookingPrice = async (payload: {
       value: val,
       cost: fieldCost,
     });
-  }
-
-  // Fallback for legacy parameters if categoryFields is empty
-  if (categoryFields.length === 0) {
-    sqftCost = sqft * 2.5;
-    bedroomCost = bedrooms * 500;
-    bathroomCost = bathrooms * 400;
   }
 
   // Addons
@@ -117,7 +102,7 @@ export const calculateBookingPrice = async (payload: {
   }));
 
   const addonsTotal = addonsBreakdown.reduce((sum, a) => sum + (a.price || 0), 0);
-  const totalAmount = baseFee + sqftCost + bedroomCost + bathroomCost + customFieldsTotal + addonsTotal;
+  const totalAmount = baseFee + customFieldsTotal + addonsTotal;
 
   return {
     categoryName,
@@ -126,11 +111,11 @@ export const calculateBookingPrice = async (payload: {
     customFieldsTotal,
     baseFee,
     sqft,
-    sqftCost,
+    sqftCost: customFieldsBreakdown.find((f) => f.fieldId === 'sqft')?.cost || 0,
     bedrooms,
-    bedroomCost,
+    bedroomCost: customFieldsBreakdown.find((f) => f.fieldId === 'bedrooms')?.cost || 0,
     bathrooms,
-    bathroomCost,
+    bathroomCost: customFieldsBreakdown.find((f) => f.fieldId === 'bathrooms')?.cost || 0,
     addons: addonsBreakdown,
     addonsTotal,
     totalAmount,
@@ -209,7 +194,7 @@ const createBooking = async (userId: string, payload: any) => {
 
   // Return populated
   return await Booking.findById(newBooking._id)
-    .populate('serviceType', 'title slug category badge price heroImage fields customFields')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('locationId');
 };
 
