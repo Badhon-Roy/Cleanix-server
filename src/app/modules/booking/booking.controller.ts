@@ -37,6 +37,29 @@ const getSingleBooking = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllBookingsAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await BookingService.getAllBookingsAdmin();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'All system bookings retrieved successfully for admin!',
+    data: result,
+  });
+});
+
+const updateBookingStatusAdmin = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  const result = await BookingService.updateBookingStatusAdmin(bookingId, req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Booking status updated successfully!',
+    data: result,
+  });
+});
+
 const cancelBooking = catchAsync(async (req: Request, res: Response) => {
   const bookingId = req.params.bookingId as string;
   const result = await BookingService.cancelBooking(req.user!.id, bookingId);
@@ -53,5 +76,7 @@ export const BookingController = {
   createBooking,
   getMyBookings,
   getSingleBooking,
+  getAllBookingsAdmin,
+  updateBookingStatusAdmin,
   cancelBooking,
 };

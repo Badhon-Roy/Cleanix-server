@@ -4,13 +4,16 @@ export type TBookingPaymentMethod = 'BKASH' | 'NAGAD' | 'STRIPE' | 'COD';
 export type TBookingPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
 export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
+export interface IBookingServiceItem {
+  name: string;
+  value: number;
+  addOn: boolean;
+}
+
 export interface IBooking {
   bookingRef: string;
   user: Types.ObjectId;
-  serviceType: Types.ObjectId; // ref to ServiceCategory
-  sqft: number;
-  bedrooms: number;
-  bathrooms: number;
+  serviceType: Types.ObjectId; // ref to ServiceCategory (populate)
   selectedAddons?: string[];
   scheduledDate: string;
   timeSlot: string;
@@ -19,10 +22,8 @@ export interface IBooking {
   paymentMethod: TBookingPaymentMethod;
   paymentStatus: TBookingPaymentStatus;
   status: TBookingStatus;
-  baseFee: number;
-  sqftCost: number;
-  bedroomCost: number;
-  bathroomCost: number;
+  cleanerTeam?: string;
+  services: IBookingServiceItem[];
   addonsTotal: number;
   totalAmount: number;
   customFieldValues?: Record<string, any>;

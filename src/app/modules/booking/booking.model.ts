@@ -1,5 +1,14 @@
 import { Schema, model } from 'mongoose';
-import { IBooking } from './booking.interface';
+import { IBooking, IBookingServiceItem } from './booking.interface';
+
+const bookingServiceItemSchema = new Schema<IBookingServiceItem>(
+  {
+    name: { type: String, required: true },
+    value: { type: Number, required: true, default: 0 },
+    addOn: { type: Boolean, required: true, default: false },
+  },
+  { _id: false },
+);
 
 const bookingSchema = new Schema<IBooking>(
   {
@@ -17,21 +26,6 @@ const bookingSchema = new Schema<IBooking>(
       type: Schema.Types.ObjectId,
       ref: 'ServiceCategory',
       required: true,
-    },
-    sqft: {
-      type: Number,
-      required: true,
-      default: 1200,
-    },
-    bedrooms: {
-      type: Number,
-      required: true,
-      default: 3,
-    },
-    bathrooms: {
-      type: Number,
-      required: true,
-      default: 2,
     },
     selectedAddons: {
       type: [String],
@@ -69,26 +63,11 @@ const bookingSchema = new Schema<IBooking>(
       enum: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
       default: 'CONFIRMED',
     },
-    baseFee: {
-      type: Number,
-      required: true,
-      default: 1500,
+    cleanerTeam: {
+      type: String,
+      default: 'Unassigned',
     },
-    sqftCost: {
-      type: Number,
-      required: true,
-      default: 3000,
-    },
-    bedroomCost: {
-      type: Number,
-      required: true,
-      default: 1500,
-    },
-    bathroomCost: {
-      type: Number,
-      required: true,
-      default: 800,
-    },
+    services: [bookingServiceItemSchema],
     addonsTotal: {
       type: Number,
       required: true,

@@ -154,12 +154,27 @@ const createBooking = async (userId: string, payload: any) => {
     customFieldValues,
   });
 
-  const baseFee = calculatedPricing.baseFee;
-  const sqftCost = calculatedPricing.sqftCost;
-  const bedroomCost = calculatedPricing.bedroomCost;
-  const bathroomCost = calculatedPricing.bathroomCost;
   const addonsTotal = calculatedPricing.addonsTotal;
   const totalAmount = calculatedPricing.totalAmount;
+
+  // Construct dynamic services array (base fee + fields breakdown + addons)
+  const servicesList: { name: string; value: number; addOn: boolean }[] = [
+    {
+      name: `বেসিক সার্ভিস ফি (${serviceCategoryDoc.title.split('(')[0].trim()})`,
+      value: calculatedPricing.baseFee,
+      addOn: false,
+    },
+    ...calculatedPricing.customFieldsBreakdown.map((f) => ({
+      name: f.detailLabel,
+      value: f.cost,
+      addOn: false,
+    })),
+    ...calculatedPricing.addons.map((a) => ({
+      name: `+ ${a.name}`,
+      value: a.price,
+      addOn: true,
+    })),
+  ];
 
   // Auto-generate Booking Reference
   const randomRefNum = Math.floor(1000 + Math.random() * 9000);
@@ -171,9 +186,6 @@ const createBooking = async (userId: string, payload: any) => {
     bookingRef,
     user: userId,
     serviceType: new Types.ObjectId(payload.serviceType),
-    sqft,
-    bedrooms,
-    bathrooms,
     selectedAddons,
     customFieldValues,
     scheduledDate: payload.scheduledDate || '2026-08-25',
@@ -183,10 +195,7 @@ const createBooking = async (userId: string, payload: any) => {
     paymentMethod: payload.paymentMethod || 'BKASH',
     paymentStatus,
     status: 'CONFIRMED',
-    baseFee,
-    sqftCost,
-    bedroomCost,
-    bathroomCost,
+    services: servicesList,
     addonsTotal,
     totalAmount,
     notes: payload.notes,
@@ -194,13 +203,14 @@ const createBooking = async (userId: string, payload: any) => {
 
   // Return populated
   return await Booking.findById(newBooking._id)
+    .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('locationId');
 };
 
 const getMyBookings = async (userId: string) => {
   const bookings = await Booking.find({ user: userId, isDeleted: false })
-    .populate('serviceType', 'title slug category badge price heroImage')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('locationId')
     .sort({ createdAt: -1 });
 
@@ -209,7 +219,7 @@ const getMyBookings = async (userId: string) => {
 
 const getSingleBooking = async (userId: string, bookingId: string) => {
   const booking = await Booking.findOne({ _id: bookingId, user: userId, isDeleted: false })
-    .populate('serviceType', 'title slug category badge price heroImage')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('locationId');
 
   if (!booking) {
@@ -217,6 +227,39 @@ const getSingleBooking = async (userId: string, bookingId: string) => {
   }
 
   return booking;
+};
+
+const getAllBookingsAdmin = async () => {
+  const bookings = await Booking.find({ isDeleted: false })
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('locationId')
+    .sort({ createdAt: -1 });
+
+  return bookings;
+};
+
+const updateBookingStatusAdmin = async (
+  bookingId: string,
+  payload: { status?: string; cleanerTeam?: string },
+) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new AppError(404, 'Booking not found!');
+  }
+
+  if (payload.status) {
+    booking.status = payload.status as any;
+  }
+  if (payload.cleanerTeam !== undefined) {
+    booking.cleanerTeam = payload.cleanerTeam;
+  }
+
+  await booking.save();
+  return await Booking.findById(booking._id)
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('locationId');
 };
 
 const cancelBooking = async (userId: string, bookingId: string) => {
@@ -240,5 +283,7 @@ export const BookingService = {
   createBooking,
   getMyBookings,
   getSingleBooking,
+  getAllBookingsAdmin,
+  updateBookingStatusAdmin,
   cancelBooking,
 };
