@@ -46,7 +46,17 @@ export const calculateBookingPrice = async (payload: {
 
   // Calculate Field Costs (Predefined & Custom Fields)
   let customFieldsTotal = 0;
-  const customFieldsBreakdown: { fieldId: string; label: string; value: any; cost: number }[] = [];
+  let sqftCost = 0;
+  let bedroomCost = 0;
+  let bathroomCost = 0;
+
+  const customFieldsBreakdown: {
+    fieldId: string;
+    label: string;
+    detailLabel: string;
+    value: any;
+    cost: number;
+  }[] = [];
 
   for (const field of categoryFields) {
     if (field.enabled === false) continue;
@@ -59,31 +69,36 @@ export const calculateBookingPrice = async (payload: {
     if (val === undefined || val === null || val === '') continue;
 
     let fieldCost = 0;
+    let detailLabel = field.label.split('(')[0].trim();
+
     if (field.fieldType === 'COUNTER' || field.fieldType === 'NUMBER') {
       const numVal = Number(val) || 0;
       fieldCost = numVal * (field.unitPrice || 0);
+      const unitStr = field.unit ? ` ${field.unit}` : '';
+      detailLabel = `${field.label.split('(')[0].trim()} (${numVal.toLocaleString()}${unitStr} × ৳${field.unitPrice || 0})`;
     } else if (field.fieldType === 'SELECT' || field.fieldType === 'RADIO') {
       const opt = field.options?.find((o: any) => o.value === String(val));
       if (opt) {
         fieldCost = opt.price || 0;
+        detailLabel = `${field.label.split('(')[0].trim()} (${opt.label})`;
       }
     }
 
-    if (fieldCost > 0) {
-      customFieldsTotal += fieldCost;
-      customFieldsBreakdown.push({
-        fieldId: field.id,
-        label: field.label,
-        value: val,
-        cost: fieldCost,
-      });
-    }
+    if (field.id === 'sqft') sqftCost = fieldCost;
+    if (field.id === 'bedrooms') bedroomCost = fieldCost;
+    if (field.id === 'bathrooms') bathroomCost = fieldCost;
+
+    customFieldsTotal += fieldCost;
+    customFieldsBreakdown.push({
+      fieldId: field.id,
+      label: field.label,
+      detailLabel,
+      value: val,
+      cost: fieldCost,
+    });
   }
 
   // Fallback for legacy parameters if categoryFields is empty
-  let sqftCost = 0;
-  let bedroomCost = 0;
-  let bathroomCost = 0;
   if (categoryFields.length === 0) {
     sqftCost = sqft * 2.5;
     bedroomCost = bedrooms * 500;
