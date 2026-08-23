@@ -57,7 +57,6 @@ export interface IServiceCategory {
   whyChoosePoints?: IServiceWhyPoint[];
   faqs?: IServiceFaqItem[];
   fields?: IBookingFieldConfig[];
-  customFields?: IBookingFieldConfig[];
   status: 'ACTIVE' | 'INACTIVE';
   isDeleted: boolean;
   createdAt?: Date;

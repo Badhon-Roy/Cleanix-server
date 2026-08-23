@@ -38,10 +38,8 @@ export const calculateBookingPrice = async (payload: {
       const parsed = parseFloat(rawPrice);
       if (!isNaN(parsed) && parsed > 0) baseFee = parsed;
 
-      if (Array.isArray(serviceDoc.fields) && serviceDoc.fields.length > 0) {
+      if (Array.isArray(serviceDoc.fields)) {
         categoryFields = serviceDoc.fields;
-      } else if (Array.isArray(serviceDoc.customFields)) {
-        categoryFields = serviceDoc.customFields;
       }
     }
   }
@@ -52,7 +50,12 @@ export const calculateBookingPrice = async (payload: {
 
   for (const field of categoryFields) {
     if (field.enabled === false) continue;
-    const val = userCustomValues[field.id];
+    let val = userCustomValues[field.id];
+    if (val === undefined || val === null || val === '') {
+      if (field.id === 'sqft' && sqft > 0) val = sqft;
+      else if (field.id === 'bedrooms' && bedrooms > 0) val = bedrooms;
+      else if (field.id === 'bathrooms' && bathrooms > 0) val = bathrooms;
+    }
     if (val === undefined || val === null || val === '') continue;
 
     let fieldCost = 0;

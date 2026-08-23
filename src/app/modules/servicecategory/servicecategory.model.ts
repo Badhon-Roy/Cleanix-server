@@ -71,7 +71,6 @@ const serviceCategorySchema = new Schema<IServiceCategory>(
       },
     ],
     fields: [bookingFieldConfigSchema],
-    customFields: [bookingFieldConfigSchema],
     status: { type: String, enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' },
     isDeleted: { type: Boolean, default: false },
   },

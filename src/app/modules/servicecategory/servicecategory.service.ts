@@ -69,7 +69,6 @@ const createService = async (payload: Partial<IServiceCategory>): Promise<IServi
     whyChoosePoints: payload.whyChoosePoints || [],
     faqs: payload.faqs || [],
     fields: payload.fields || [],
-    customFields: payload.customFields || [],
     status: payload.status || 'ACTIVE',
   });
 
