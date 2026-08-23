@@ -4,6 +4,7 @@ import { CustomerRoutes } from '../modules/customer/customer.route';
 import { LocationRoutes } from '../modules/location/location.route';
 import { BookingRoutes } from '../modules/booking/booking.route';
 import { AddonRoutes } from '../modules/addon/addon.route';
+import { PricingRoutes } from '../modules/pricing/pricing.route';
 
 const router = Router();
 
@@ -27,6 +28,10 @@ const moduleRoutes = [
   {
     path: '/addons',
     route: AddonRoutes,
+  },
+  {
+    path: '/pricing',
+    route: PricingRoutes,
   },
 ];
 

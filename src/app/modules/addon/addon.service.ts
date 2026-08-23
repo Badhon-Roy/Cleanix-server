@@ -1,6 +1,7 @@
 import { Addon } from './addon.model';
 import { IAddon } from './addon.interface';
 import AppError from '../../errors/AppError';
+import { emitAddonUpdated } from '../../socket/socket';
 
 // Initial default seed dataset if DB is empty
 const defaultInitialAddons = [
@@ -92,6 +93,8 @@ const createAddon = async (payload: Partial<IAddon>) => {
     active: payload.active !== undefined ? payload.active : true,
   });
 
+  emitAddonUpdated({ action: 'create', addon: newAddon });
+
   return newAddon;
 };
 
@@ -107,6 +110,8 @@ const updateAddon = async (addonId: string, payload: Partial<IAddon>) => {
     { new: true, runValidators: true },
   );
 
+  emitAddonUpdated({ action: 'update', addon: updatedAddon });
+
   return updatedAddon;
 };
 
@@ -117,6 +122,8 @@ const deleteAddon = async (addonId: string) => {
   }
 
   await Addon.findOneAndUpdate({ _id: addonId }, { isDeleted: true });
+
+  emitAddonUpdated({ action: 'delete', addonId });
 
   return null;
 };

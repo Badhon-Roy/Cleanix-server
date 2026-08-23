@@ -1,7 +1,10 @@
+import http from 'http';
 import dns from 'node:dns';
 import mongoose from 'mongoose';
 import app from './app';
 import config from './config';
+import { initSocket } from './app/socket/socket';
+import { seedAdmin } from './app/DB/seedAdmin';
 
 // Fix for Windows / ISP local DNS SRV resolution issues with MongoDB Atlas
 try {
@@ -10,13 +13,15 @@ try {
   // Fallback if environment doesn't allow setting custom DNS
 }
 
-import { seedAdmin } from './app/DB/seedAdmin';
-
 async function main() {
   try {
     await mongoose.connect(config.db_url as string);
     await seedAdmin();
-    app.listen(config.port, () => {
+
+    const server = http.createServer(app);
+    initSocket(server);
+
+    server.listen(config.port, () => {
       console.log(`🚀 Cleanix app listening on port ${config.port}`);
     });
   } catch (err) {

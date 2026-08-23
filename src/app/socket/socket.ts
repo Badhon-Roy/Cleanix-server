@@ -31,3 +31,9 @@ export const emitAddonUpdated = (data?: any) => {
     io.emit('addon_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitPricingUpdated = (data?: any) => {
+  if (io) {
+    io.emit('pricing_updated', data || { timestamp: Date.now() });
+  }
+};

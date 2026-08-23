@@ -1,14 +1,8 @@
 import { Booking } from './booking.model';
 import { IBooking } from './booking.interface';
 import AppError from '../../errors/AppError';
-
-const addonPriceMap: Record<string, number> = {
-  sofa: 2000,
-  oven: 1200,
-  fridge: 1000,
-  window: 800,
-  pet: 1500,
-};
+import { PricingService } from '../pricing/pricing.service';
+import { Addon } from '../addon/addon.model';
 
 const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   const sqft = payload.sqft && payload.sqft > 0 ? payload.sqft : 1200;
@@ -16,13 +10,21 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   const bathrooms = payload.bathrooms && payload.bathrooms > 0 ? payload.bathrooms : 2;
   const selectedAddons = payload.selectedAddons || [];
 
-  const baseFee = 1500;
-  const sqftCost = sqft * 2.5;
-  const bedroomCost = bedrooms * 500;
-  const bathroomCost = bathrooms * 400;
+  // Fetch live pricing multipliers configured by Admin
+  const pricingConfig = await PricingService.getPricingConfig();
 
+  const baseFee = pricingConfig.baseFee || 1500;
+  const sqftCost = sqft * (pricingConfig.sqftRate || 2.5);
+  const bedroomCost = bedrooms * (pricingConfig.bedroomRate || 500);
+  const bathroomCost = bathrooms * (pricingConfig.bathroomRate || 400);
+
+  // Fetch active addons from DB to calculate actual price
+  const activeAddons = await Addon.find({ isDeleted: false });
   const addonsTotal = selectedAddons.reduce((acc, addonKey) => {
-    return acc + (addonPriceMap[addonKey] || 0);
+    const item = activeAddons.find(
+      (a) => a.slug === addonKey || String(a._id) === addonKey
+    );
+    return acc + (item ? item.price : 0);
   }, 0);
 
   const totalAmount = baseFee + sqftCost + bedroomCost + bathroomCost + addonsTotal;
