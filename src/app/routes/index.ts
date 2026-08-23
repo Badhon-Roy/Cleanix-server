@@ -5,6 +5,7 @@ import { LocationRoutes } from '../modules/location/location.route';
 import { BookingRoutes } from '../modules/booking/booking.route';
 import { AddonRoutes } from '../modules/addon/addon.route';
 import { PricingRoutes } from '../modules/pricing/pricing.route';
+import { ServiceCategoryRoutes } from '../modules/service/service.route';
 
 const router = Router();
 
@@ -32,6 +33,10 @@ const moduleRoutes = [
   {
     path: '/pricing',
     route: PricingRoutes,
+  },
+  {
+    path: '/services',
+    route: ServiceCategoryRoutes,
   },
 ];
 

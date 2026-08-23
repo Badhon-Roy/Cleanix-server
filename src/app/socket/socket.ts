@@ -37,3 +37,9 @@ export const emitPricingUpdated = (data?: any) => {
     io.emit('pricing_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitServiceUpdated = (data?: any) => {
+  if (io) {
+    io.emit('service_catalog_updated', data || { timestamp: Date.now() });
+  }
+};

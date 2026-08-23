@@ -13,4 +13,4 @@ const pricingConfigSchema = new Schema<IPricingConfig>(
   },
 );
 
-export const PricingConfig = model<IPricingConfig>('PricingConfig', pricingConfigSchema);
+export const PricingConfig = model<IPricingConfig>('PricingConfig', pricingConfigSchema, 'newbookingpricing');

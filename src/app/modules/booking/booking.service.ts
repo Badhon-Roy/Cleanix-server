@@ -3,6 +3,7 @@ import { IBooking } from './booking.interface';
 import AppError from '../../errors/AppError';
 import { PricingService } from '../pricing/pricing.service';
 import { Addon } from '../addon/addon.model';
+import { Service } from '../service/service.model';
 
 const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   const sqft = payload.sqft && payload.sqft > 0 ? payload.sqft : 1200;
@@ -13,7 +14,21 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   // Fetch live pricing multipliers configured by Admin
   const pricingConfig = await PricingService.getPricingConfig();
 
-  const baseFee = pricingConfig.baseFee || 1500;
+  // Dynamic Base Fee from selected Service Category Starting Rate (fallback to pricingConfig.baseFee)
+  let baseFee = pricingConfig.baseFee || 1500;
+  if (payload.serviceType) {
+    const selectedServiceCategory = await Service.findOne({
+      $or: [{ slug: payload.serviceType }, { category: payload.serviceType }],
+      isDeleted: false,
+    });
+    if (selectedServiceCategory && selectedServiceCategory.price) {
+      const parsedPrice = parseFloat(String(selectedServiceCategory.price).replace(/[^0-9.]/g, ''));
+      if (!isNaN(parsedPrice) && parsedPrice > 0) {
+        baseFee = parsedPrice;
+      }
+    }
+  }
+
   const sqftCost = sqft * (pricingConfig.sqftRate || 2.5);
   const bedroomCost = bedrooms * (pricingConfig.bedroomRate || 500);
   const bathroomCost = bathrooms * (pricingConfig.bathroomRate || 400);
