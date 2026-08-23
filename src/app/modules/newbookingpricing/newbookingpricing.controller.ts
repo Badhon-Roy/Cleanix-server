@@ -25,7 +25,19 @@ const updatePricingConfig = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const calculateBookingPrice = catchAsync(async (req: Request, res: Response) => {
+  const result = await NewBookingPricingService.calculateBookingPrice(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Booking price calculated successfully!',
+    data: result,
+  });
+});
+
 export const NewBookingPricingController = {
   getPricingConfig,
   updatePricingConfig,
+  calculateBookingPrice,
 };

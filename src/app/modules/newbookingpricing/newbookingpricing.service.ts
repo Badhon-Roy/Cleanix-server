@@ -1,6 +1,8 @@
 import { NewBookingPricing } from './newbookingpricing.model';
 import { INewBookingPricing } from './newbookingpricing.interface';
 import { emitPricingUpdated } from '../../socket/socket';
+import { ServiceCategory } from '../servicecategory/servicecategory.model';
+import { Addon } from '../addon/addon.model';
 
 const seedPricingIfEmpty = async (): Promise<INewBookingPricing> => {
   let config = await NewBookingPricing.findOne();
@@ -44,7 +46,76 @@ const updatePricingConfig = async (
   return config;
 };
 
+const calculateBookingPrice = async (payload: {
+  serviceSlug?: string;
+  sqft?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  selectedAddons?: string[];
+}) => {
+  const config = await seedPricingIfEmpty();
+
+  const sqft = Number(payload.sqft) || 0;
+  const bedrooms = Number(payload.bedrooms) || 0;
+  const bathrooms = Number(payload.bathrooms) || 0;
+  const addonSlugs: string[] = Array.isArray(payload.selectedAddons) ? payload.selectedAddons : [];
+
+  // Base Fee: from selected service category price field
+  let baseFee = config.baseFee;
+  let categoryName = 'Base Service Fee';
+
+  if (payload.serviceSlug) {
+    const serviceDoc = await ServiceCategory.findOne({
+      $or: [{ slug: payload.serviceSlug }, { category: payload.serviceSlug }],
+      status: 'ACTIVE',
+    });
+    if (serviceDoc) {
+      categoryName = serviceDoc.title.split('(')[0].trim();
+      const rawPrice = String(serviceDoc.price || '').replace(/[^0-9.]/g, '');
+      const parsed = parseFloat(rawPrice);
+      if (!isNaN(parsed) && parsed > 0) baseFee = parsed;
+    }
+  }
+
+  // Room & Area Charges
+  const sqftCost = sqft * config.sqftRate;
+  const bedroomCost = bedrooms * config.bedroomRate;
+  const bathroomCost = bathrooms * config.bathroomRate;
+
+  // Addons
+  const addonDocs = addonSlugs.length
+    ? await Addon.find({ slug: { $in: addonSlugs }, active: true, isDeleted: false })
+    : [];
+
+  const addonsBreakdown = addonDocs.map((a) => ({
+    slug: a.slug,
+    name: a.name,
+    price: a.price,
+  }));
+
+  const addonsTotal = addonsBreakdown.reduce((sum, a) => sum + (a.price || 0), 0);
+  const totalAmount = baseFee + sqftCost + bedroomCost + bathroomCost + addonsTotal;
+
+  return {
+    categoryName,
+    baseFee,
+    sqft,
+    sqftRate: config.sqftRate,
+    sqftCost,
+    bedrooms,
+    bedroomRate: config.bedroomRate,
+    bedroomCost,
+    bathrooms,
+    bathroomRate: config.bathroomRate,
+    bathroomCost,
+    addons: addonsBreakdown,
+    addonsTotal,
+    totalAmount,
+  };
+};
+
 export const NewBookingPricingService = {
   getPricingConfig,
   updatePricingConfig,
+  calculateBookingPrice,
 };
