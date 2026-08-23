@@ -15,8 +15,15 @@ const getAllServicesAdmin = async (): Promise<IServiceCategory[]> => {
   return services;
 };
 
-const getSingleServiceBySlug = async (slug: string): Promise<IServiceCategory> => {
-  const service = await ServiceCategory.findOne({ slug, isDeleted: false });
+const getSingleServiceBySlug = async (identifier: string): Promise<IServiceCategory> => {
+  const isObjectId = identifier ? identifier.match(/^[0-9a-fA-F]{24}$/) : null;
+  const service = await ServiceCategory.findOne({
+    $or: [
+      { slug: identifier },
+      ...(isObjectId ? [{ _id: identifier }] : []),
+    ],
+    isDeleted: false,
+  });
   if (!service) {
     throw new AppError(404, 'Service category not found!');
   }
@@ -54,6 +61,15 @@ const createService = async (payload: Partial<IServiceCategory>): Promise<IServi
     shortDesc: payload.shortDesc,
     introParagraph1: payload.introParagraph1 || payload.shortDesc,
     introParagraph2: payload.introParagraph2 || '',
+    offersTitle: payload.offersTitle,
+    offersDesc: payload.offersDesc,
+    offers: payload.offers || [],
+    whyChooseTitle: payload.whyChooseTitle,
+    whyChooseDesc: payload.whyChooseDesc,
+    whyChoosePoints: payload.whyChoosePoints || [],
+    faqs: payload.faqs || [],
+    fields: payload.fields || [],
+    customFields: payload.customFields || [],
     status: payload.status || 'ACTIVE',
   });
 

@@ -1,6 +1,6 @@
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import { NewBookingPricingService } from '../modules/newbookingpricing/newbookingpricing.service';
+import { calculateBookingPrice } from '../modules/booking/booking.service';
 
 let io: SocketIOServer | null = null;
 
@@ -22,9 +22,10 @@ export const initSocket = (server: HTTPServer) => {
       bedrooms?: number;
       bathrooms?: number;
       selectedAddons?: string[];
+      customFieldValues?: Record<string, any>;
     }) => {
       try {
-        const result = await NewBookingPricingService.calculateBookingPrice(payload);
+        const result = await calculateBookingPrice(payload);
         socket.emit('booking_price_result', { success: true, data: result });
       } catch (err: any) {
         socket.emit('booking_price_result', { success: false, message: err.message || 'Calculation failed' });

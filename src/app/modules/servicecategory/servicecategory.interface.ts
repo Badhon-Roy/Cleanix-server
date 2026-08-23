@@ -15,6 +15,27 @@ export interface IServiceFaqItem {
   answer: string;
 }
 
+export type TFieldType = 'COUNTER' | 'NUMBER' | 'SELECT' | 'RADIO' | 'TEXT';
+
+export interface IFieldOption {
+  label: string;
+  value: string;
+  price: number;
+}
+
+export interface IBookingFieldConfig {
+  id: string;
+  label: string;
+  fieldType: TFieldType;
+  isPredefined?: boolean;
+  required?: boolean;
+  defaultValue?: any;
+  unit?: string;
+  unitPrice?: number;
+  options?: IFieldOption[];
+  enabled: boolean;
+}
+
 export interface IServiceCategory {
   _id?: string;
   slug: string;
@@ -35,6 +56,8 @@ export interface IServiceCategory {
   whyChooseDesc?: string;
   whyChoosePoints?: IServiceWhyPoint[];
   faqs?: IServiceFaqItem[];
+  fields?: IBookingFieldConfig[];
+  customFields?: IBookingFieldConfig[];
   status: 'ACTIVE' | 'INACTIVE';
   isDeleted: boolean;
   createdAt?: Date;

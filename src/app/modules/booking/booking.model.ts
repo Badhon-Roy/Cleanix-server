@@ -98,6 +98,9 @@ const bookingSchema = new Schema<IBooking>(
       type: Number,
       required: true,
     },
+    customFieldValues: {
+      type: Schema.Types.Mixed,
+    },
     notes: {
       type: String,
     },

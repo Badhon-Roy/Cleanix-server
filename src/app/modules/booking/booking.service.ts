@@ -1,15 +1,130 @@
 import { Types } from 'mongoose';
 import { Booking } from './booking.model';
 import AppError from '../../errors/AppError';
-import { NewBookingPricingService } from '../newbookingpricing/newbookingpricing.service';
 import { Addon } from '../addon/addon.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
 
+export const calculateBookingPrice = async (payload: {
+  serviceSlug?: string;
+  sqft?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  selectedAddons?: string[];
+  customFieldValues?: Record<string, any>;
+}) => {
+  const sqft = Number(payload.sqft) || 0;
+  const bedrooms = Number(payload.bedrooms) || 0;
+  const bathrooms = Number(payload.bathrooms) || 0;
+  const addonSlugs: string[] = Array.isArray(payload.selectedAddons) ? payload.selectedAddons : [];
+  const userCustomValues = payload.customFieldValues || {};
+
+  // Base Fee & Active Fields: from selected service category
+  let baseFee = 1500;
+  let categoryName = 'Base Service Fee';
+  let categoryFields: any[] = [];
+
+  if (payload.serviceSlug) {
+    const serviceDoc = await ServiceCategory.findOne({
+      $or: [
+        { _id: payload.serviceSlug.match(/^[0-9a-fA-F]{24}$/) ? payload.serviceSlug : null },
+        { slug: payload.serviceSlug },
+        { category: payload.serviceSlug },
+      ],
+      status: 'ACTIVE',
+    });
+    if (serviceDoc) {
+      categoryName = serviceDoc.title.split('(')[0].trim();
+      const rawPrice = String(serviceDoc.price || '').replace(/[^0-9.]/g, '');
+      const parsed = parseFloat(rawPrice);
+      if (!isNaN(parsed) && parsed > 0) baseFee = parsed;
+
+      if (Array.isArray(serviceDoc.fields) && serviceDoc.fields.length > 0) {
+        categoryFields = serviceDoc.fields;
+      } else if (Array.isArray(serviceDoc.customFields)) {
+        categoryFields = serviceDoc.customFields;
+      }
+    }
+  }
+
+  // Calculate Field Costs (Predefined & Custom Fields)
+  let customFieldsTotal = 0;
+  const customFieldsBreakdown: { fieldId: string; label: string; value: any; cost: number }[] = [];
+
+  for (const field of categoryFields) {
+    if (field.enabled === false) continue;
+    const val = userCustomValues[field.id];
+    if (val === undefined || val === null || val === '') continue;
+
+    let fieldCost = 0;
+    if (field.fieldType === 'COUNTER' || field.fieldType === 'NUMBER') {
+      const numVal = Number(val) || 0;
+      fieldCost = numVal * (field.unitPrice || 0);
+    } else if (field.fieldType === 'SELECT' || field.fieldType === 'RADIO') {
+      const opt = field.options?.find((o: any) => o.value === String(val));
+      if (opt) {
+        fieldCost = opt.price || 0;
+      }
+    }
+
+    if (fieldCost > 0) {
+      customFieldsTotal += fieldCost;
+      customFieldsBreakdown.push({
+        fieldId: field.id,
+        label: field.label,
+        value: val,
+        cost: fieldCost,
+      });
+    }
+  }
+
+  // Fallback for legacy parameters if categoryFields is empty
+  let sqftCost = 0;
+  let bedroomCost = 0;
+  let bathroomCost = 0;
+  if (categoryFields.length === 0) {
+    sqftCost = sqft * 2.5;
+    bedroomCost = bedrooms * 500;
+    bathroomCost = bathrooms * 400;
+  }
+
+  // Addons
+  const addonDocs = addonSlugs.length
+    ? await Addon.find({ slug: { $in: addonSlugs }, active: true, isDeleted: false })
+    : [];
+
+  const addonsBreakdown = addonDocs.map((a) => ({
+    slug: a.slug,
+    name: a.name,
+    price: a.price,
+  }));
+
+  const addonsTotal = addonsBreakdown.reduce((sum, a) => sum + (a.price || 0), 0);
+  const totalAmount = baseFee + sqftCost + bedroomCost + bathroomCost + customFieldsTotal + addonsTotal;
+
+  return {
+    categoryName,
+    categoryFields,
+    customFieldsBreakdown,
+    customFieldsTotal,
+    baseFee,
+    sqft,
+    sqftCost,
+    bedrooms,
+    bedroomCost,
+    bathrooms,
+    bathroomCost,
+    addons: addonsBreakdown,
+    addonsTotal,
+    totalAmount,
+  };
+};
+
 const createBooking = async (userId: string, payload: any) => {
-  const sqft = payload.sqft && payload.sqft > 0 ? payload.sqft : 1200;
-  const bedrooms = payload.bedrooms && payload.bedrooms > 0 ? payload.bedrooms : 3;
-  const bathrooms = payload.bathrooms && payload.bathrooms > 0 ? payload.bathrooms : 2;
+  const sqft = payload.sqft && payload.sqft > 0 ? payload.sqft : 0;
+  const bedrooms = payload.bedrooms && payload.bedrooms > 0 ? payload.bedrooms : 0;
+  const bathrooms = payload.bathrooms && payload.bathrooms > 0 ? payload.bathrooms : 0;
   const selectedAddons = payload.selectedAddons || [];
+  const customFieldValues = payload.customFieldValues || {};
 
   // Validate serviceType is a valid ObjectId
   if (!payload.serviceType || !Types.ObjectId.isValid(payload.serviceType)) {
@@ -22,28 +137,26 @@ const createBooking = async (userId: string, payload: any) => {
     isDeleted: false,
   });
 
-  // Fetch live pricing multipliers configured by Admin
-  const pricingConfig = await NewBookingPricingService.getPricingConfig();
-
-  // Base fee from service category price, fallback to pricingConfig.baseFee
-  let baseFee = pricingConfig.baseFee || 1500;
-  if (serviceCategoryDoc?.price) {
-    const parsedPrice = parseFloat(String(serviceCategoryDoc.price).replace(/[^0-9.]/g, ''));
-    if (!isNaN(parsedPrice) && parsedPrice > 0) baseFee = parsedPrice;
+  if (!serviceCategoryDoc) {
+    throw new AppError(404, 'Selected Service Category not found');
   }
 
-  const sqftCost = sqft * (pricingConfig.sqftRate || 2.5);
-  const bedroomCost = bedrooms * (pricingConfig.bedroomRate || 500);
-  const bathroomCost = bathrooms * (pricingConfig.bathroomRate || 400);
+  // Calculate pricing server-side
+  const calculatedPricing = await calculateBookingPrice({
+    serviceSlug: String(serviceCategoryDoc._id),
+    sqft,
+    bedrooms,
+    bathrooms,
+    selectedAddons,
+    customFieldValues,
+  });
 
-  // Fetch active addons to calculate price
-  const activeAddons = await Addon.find({ isDeleted: false });
-  const addonsTotal = selectedAddons.reduce((acc: number, addonKey: string) => {
-    const item = activeAddons.find((a) => a.slug === addonKey || String(a._id) === addonKey);
-    return acc + (item ? item.price : 0);
-  }, 0);
-
-  const totalAmount = baseFee + sqftCost + bedroomCost + bathroomCost + addonsTotal;
+  const baseFee = calculatedPricing.baseFee;
+  const sqftCost = calculatedPricing.sqftCost;
+  const bedroomCost = calculatedPricing.bedroomCost;
+  const bathroomCost = calculatedPricing.bathroomCost;
+  const addonsTotal = calculatedPricing.addonsTotal;
+  const totalAmount = calculatedPricing.totalAmount;
 
   // Auto-generate Booking Reference
   const randomRefNum = Math.floor(1000 + Math.random() * 9000);
@@ -59,6 +172,7 @@ const createBooking = async (userId: string, payload: any) => {
     bedrooms,
     bathrooms,
     selectedAddons,
+    customFieldValues,
     scheduledDate: payload.scheduledDate || '2026-08-25',
     timeSlot: payload.timeSlot || '09:00 AM - 11:00 AM',
     address: payload.address || 'Dhaka',
@@ -77,7 +191,7 @@ const createBooking = async (userId: string, payload: any) => {
 
   // Return populated
   return await Booking.findById(newBooking._id)
-    .populate('serviceType', 'title slug category badge price heroImage')
+    .populate('serviceType', 'title slug category badge price heroImage fields customFields')
     .populate('locationId');
 };
 

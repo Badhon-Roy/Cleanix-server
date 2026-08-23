@@ -25,6 +25,7 @@ export interface IBooking {
   bathroomCost: number;
   addonsTotal: number;
   totalAmount: number;
+  customFieldValues?: Record<string, any>;
   notes?: string;
   isDeleted?: boolean;
 }

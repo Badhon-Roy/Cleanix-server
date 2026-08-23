@@ -1,6 +1,35 @@
 import { Schema, model } from 'mongoose';
 import { IServiceCategory } from './servicecategory.interface';
 
+const bookingFieldOptionSchema = new Schema(
+  {
+    label: { type: String },
+    value: { type: String },
+    price: { type: Number, default: 0 },
+  },
+  { _id: false },
+);
+
+const bookingFieldConfigSchema = new Schema(
+  {
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    fieldType: {
+      type: String,
+      enum: ['COUNTER', 'NUMBER', 'SELECT', 'RADIO', 'TEXT'],
+      default: 'COUNTER',
+    },
+    isPredefined: { type: Boolean, default: false },
+    required: { type: Boolean, default: false },
+    defaultValue: { type: Schema.Types.Mixed },
+    unit: { type: String },
+    unitPrice: { type: Number, default: 0 },
+    options: [bookingFieldOptionSchema],
+    enabled: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
 const serviceCategorySchema = new Schema<IServiceCategory>(
   {
     slug: { type: String, required: true, unique: true },
@@ -41,6 +70,8 @@ const serviceCategorySchema = new Schema<IServiceCategory>(
         answer: { type: String },
       },
     ],
+    fields: [bookingFieldConfigSchema],
+    customFields: [bookingFieldConfigSchema],
     status: { type: String, enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' },
     isDeleted: { type: Boolean, default: false },
   },
