@@ -39,7 +39,16 @@ const getMyProfile = async (userId: string) => {
   if (!customer) {
     throw new AppError(404, 'Customer profile not found!');
   }
-  return formatCustomerResponse(customer);
+  const user = await User.findById(userId).select('+password');
+  const isGoogleUser = user?.password
+    ? await User.isPasswordMatched('GOOGLE_AUTH_OAUTH_USER', user.password)
+    : false;
+
+  const formatted = formatCustomerResponse(customer);
+  return {
+    ...formatted,
+    isGoogleUser,
+  };
 };
 
 const updateMyProfile = async (userId: string, payload: Partial<ICustomer>) => {
@@ -66,7 +75,16 @@ const updateMyProfile = async (userId: string, payload: Partial<ICustomer>) => {
     await User.findByIdAndUpdate(userId, { $set: userUpdate });
   }
 
-  return formatCustomerResponse(updatedCustomer);
+  const user = await User.findById(userId).select('+password');
+  const isGoogleUser = user?.password
+    ? await User.isPasswordMatched('GOOGLE_AUTH_OAUTH_USER', user.password)
+    : false;
+
+  const formatted = formatCustomerResponse(updatedCustomer);
+  return {
+    ...formatted,
+    isGoogleUser,
+  };
 };
 
 const deleteMyAccount = async (userId: string) => {

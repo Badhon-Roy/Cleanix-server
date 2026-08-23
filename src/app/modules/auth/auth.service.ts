@@ -477,13 +477,22 @@ const changePassword = async (userId: string, payload: TChangePassword) => {
     throw new AppError(404, 'User not found!');
   }
 
-  const isPasswordMatched = await User.isPasswordMatched(
-    payload.oldPassword,
-    user.password,
-  );
+  const isGoogleUser = user.password
+    ? await User.isPasswordMatched('GOOGLE_AUTH_OAUTH_USER', user.password)
+    : false;
 
-  if (!isPasswordMatched) {
-    throw new AppError(400, 'Old password is incorrect!');
+  if (!isGoogleUser) {
+    if (!payload.oldPassword) {
+      throw new AppError(400, 'Old password is required!');
+    }
+    const isPasswordMatched = await User.isPasswordMatched(
+      payload.oldPassword,
+      user.password,
+    );
+
+    if (!isPasswordMatched) {
+      throw new AppError(400, 'Old password is incorrect!');
+    }
   }
 
   user.password = payload.newPassword;

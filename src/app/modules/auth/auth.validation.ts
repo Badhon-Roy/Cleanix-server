@@ -38,7 +38,7 @@ const refreshTokenValidationSchema = z.object({
 
 const changePasswordValidationSchema = z.object({
   body: z.object({
-    oldPassword: z.string().min(1, 'Old password is required'),
+    oldPassword: z.string().optional(),
     newPassword: z.string().min(6, 'New password must be at least 6 characters'),
   }),
 });
