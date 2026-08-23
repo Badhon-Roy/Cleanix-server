@@ -80,6 +80,9 @@ const verifyRegisterOTP = async (payload: TVerifyRegisterOTP) => {
 };
 
 const registerUser = async (payload: TRegisterUser) => {
+  // Clean up any old soft-deleted user records with this email
+  await User.deleteMany({ email: payload.email, isDeleted: true });
+
   const isUserExist = await User.isUserExistsByEmail(payload.email);
   if (isUserExist) {
     throw new AppError(400, 'User with this email already exists!');
@@ -294,7 +297,9 @@ const loginUser = async (payload: TLoginUser) => {
 };
 
 const googleLogin = async (payload: TGoogleLoginUser) => {
-  let user = await User.findOne({ email: payload.email, isDeleted: false });
+  const emailLower = payload.email.toLowerCase();
+
+  let user = await User.findOne({ email: emailLower, isDeleted: false });
 
   const role = payload.role || 'CUSTOMER';
   const isCleaner = role === 'CLEANER';
@@ -302,6 +307,12 @@ const googleLogin = async (payload: TGoogleLoginUser) => {
   const isApproved = !isCleaner;
 
   if (!user) {
+    // Purge any stale records with this email across all collections so E11000 duplicate key error NEVER happens in User/Customer/Cleaner/Admin
+    await Customer.deleteMany({ email: emailLower });
+    await Cleaner.deleteMany({ email: emailLower });
+    await Admin.deleteMany({ email: emailLower });
+    await User.deleteMany({ email: emailLower });
+
     // Register Google User
     const session = await mongoose.startSession();
     try {

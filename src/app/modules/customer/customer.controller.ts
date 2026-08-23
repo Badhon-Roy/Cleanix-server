@@ -25,7 +25,19 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteMyAccount = catchAsync(async (req: Request, res: Response) => {
+  await CustomerService.deleteMyAccount(req.user!.id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Your Customer account has been deleted successfully.',
+    data: null,
+  });
+});
+
 export const CustomerController = {
   getMyProfile,
   updateMyProfile,
+  deleteMyAccount,
 };

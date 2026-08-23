@@ -3,6 +3,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../../config';
 import AppError from '../errors/AppError';
 import catchAsync from '../utils/catchAsync';
+import { User } from '../modules/user/user.model';
 
 const auth = (...requiredRoles: string[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -25,7 +26,21 @@ const auth = (...requiredRoles: string[]) => {
       config.jwt_access_secret as string,
     ) as JwtPayload;
 
-    const { role } = decoded;
+    const { id, role } = decoded;
+
+    // 3. Check if user exists in DB and is active
+    const user = await User.findById(id);
+    if (!user) {
+      throw new AppError(401, 'This user account no longer exists!');
+    }
+
+    if (user.isDeleted) {
+      throw new AppError(403, 'This account has been deleted!');
+    }
+
+    if (user.status === 'BLOCKED') {
+      throw new AppError(403, 'This account has been blocked!');
+    }
 
     if (requiredRoles.length && !requiredRoles.includes(role)) {
       throw new AppError(403, 'Forbidden! You do not have permission.');

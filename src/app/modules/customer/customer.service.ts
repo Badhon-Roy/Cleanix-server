@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Customer } from './customer.model';
 import { User } from '../user/user.model';
 import { ICustomer } from './customer.interface';
@@ -53,7 +54,43 @@ const updateMyProfile = async (userId: string, payload: Partial<ICustomer>) => {
   return formatCustomerResponse(updatedCustomer);
 };
 
+const deleteMyAccount = async (userId: string) => {
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    // 1. Permanently delete Customer record from MongoDB
+    const customer = await Customer.findOneAndDelete(
+      { user: userId },
+      { session },
+    );
+
+    // 2. Permanently delete User record from MongoDB
+    const user = await User.findByIdAndDelete(userId, { session });
+
+    if (!customer && !user) {
+      throw new AppError(404, 'Customer profile not found or already deleted!');
+    }
+
+    // Clean up any potential duplicate records by email across collections
+    if (user?.email) {
+      await Customer.deleteMany({ email: user.email.toLowerCase() }, { session });
+      await User.deleteMany({ email: user.email.toLowerCase() }, { session });
+    }
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    return customer || { _id: userId };
+  } catch (error) {
+    await session.abortTransaction();
+    await session.endSession();
+    throw error;
+  }
+};
+
 export const CustomerService = {
   getMyProfile,
   updateMyProfile,
+  deleteMyAccount,
 };
