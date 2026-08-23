@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { Booking } from './booking.model';
 import { IBooking } from './booking.interface';
 import AppError from '../../errors/AppError';
@@ -5,40 +6,41 @@ import { NewBookingPricingService } from '../newbookingpricing/newbookingpricing
 import { Addon } from '../addon/addon.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
 
-const createBooking = async (userId: string, payload: Partial<IBooking>) => {
+const createBooking = async (userId: string, payload: any) => {
   const sqft = payload.sqft && payload.sqft > 0 ? payload.sqft : 1200;
   const bedrooms = payload.bedrooms && payload.bedrooms > 0 ? payload.bedrooms : 3;
   const bathrooms = payload.bathrooms && payload.bathrooms > 0 ? payload.bathrooms : 2;
   const selectedAddons = payload.selectedAddons || [];
 
+  // Validate serviceType is a valid ObjectId
+  if (!payload.serviceType || !Types.ObjectId.isValid(payload.serviceType)) {
+    throw new AppError(400, 'Invalid serviceType: must be a valid ServiceCategory ID');
+  }
+
+  // Fetch service category by _id
+  const serviceCategoryDoc = await ServiceCategory.findOne({
+    _id: payload.serviceType,
+    isDeleted: false,
+  });
+
   // Fetch live pricing multipliers configured by Admin
   const pricingConfig = await NewBookingPricingService.getPricingConfig();
 
-  // Dynamic Base Fee from selected Service Category Starting Rate (fallback to pricingConfig.baseFee)
+  // Base fee from service category price, fallback to pricingConfig.baseFee
   let baseFee = pricingConfig.baseFee || 1500;
-  if (payload.serviceType) {
-    const selectedServiceCategory = await ServiceCategory.findOne({
-      $or: [{ slug: payload.serviceType }, { category: payload.serviceType }],
-      isDeleted: false,
-    });
-    if (selectedServiceCategory && selectedServiceCategory.price) {
-      const parsedPrice = parseFloat(String(selectedServiceCategory.price).replace(/[^0-9.]/g, ''));
-      if (!isNaN(parsedPrice) && parsedPrice > 0) {
-        baseFee = parsedPrice;
-      }
-    }
+  if (serviceCategoryDoc?.price) {
+    const parsedPrice = parseFloat(String(serviceCategoryDoc.price).replace(/[^0-9.]/g, ''));
+    if (!isNaN(parsedPrice) && parsedPrice > 0) baseFee = parsedPrice;
   }
 
   const sqftCost = sqft * (pricingConfig.sqftRate || 2.5);
   const bedroomCost = bedrooms * (pricingConfig.bedroomRate || 500);
   const bathroomCost = bathrooms * (pricingConfig.bathroomRate || 400);
 
-  // Fetch active addons from DB to calculate actual price
+  // Fetch active addons to calculate price
   const activeAddons = await Addon.find({ isDeleted: false });
-  const addonsTotal = selectedAddons.reduce((acc, addonKey) => {
-    const item = activeAddons.find(
-      (a) => a.slug === addonKey || String(a._id) === addonKey
-    );
+  const addonsTotal = selectedAddons.reduce((acc: number, addonKey: string) => {
+    const item = activeAddons.find((a) => a.slug === addonKey || String(a._id) === addonKey);
     return acc + (item ? item.price : 0);
   }, 0);
 
@@ -49,12 +51,11 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
   const bookingRef = `#CLN-2026-${randomRefNum}`;
 
   const paymentStatus = payload.paymentMethod === 'COD' ? 'PENDING' : 'PAID';
-  const status = 'CONFIRMED';
 
   const newBooking = await Booking.create({
     bookingRef,
     user: userId,
-    serviceType: payload.serviceType || 'RESIDENTIAL',
+    serviceType: new Types.ObjectId(payload.serviceType),
     sqft,
     bedrooms,
     bathrooms,
@@ -65,7 +66,7 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     locationId: payload.locationId,
     paymentMethod: payload.paymentMethod || 'BKASH',
     paymentStatus,
-    status,
+    status: 'CONFIRMED',
     baseFee,
     sqftCost,
     bedroomCost,
@@ -75,11 +76,15 @@ const createBooking = async (userId: string, payload: Partial<IBooking>) => {
     notes: payload.notes,
   });
 
-  return newBooking;
+  // Return populated
+  return await Booking.findById(newBooking._id)
+    .populate('serviceType', 'title slug category badge price heroImage')
+    .populate('locationId');
 };
 
 const getMyBookings = async (userId: string) => {
   const bookings = await Booking.find({ user: userId, isDeleted: false })
+    .populate('serviceType', 'title slug category badge price heroImage')
     .populate('locationId')
     .sort({ createdAt: -1 });
 
@@ -88,6 +93,7 @@ const getMyBookings = async (userId: string) => {
 
 const getSingleBooking = async (userId: string, bookingId: string) => {
   const booking = await Booking.findOne({ _id: bookingId, user: userId, isDeleted: false })
+    .populate('serviceType', 'title slug category badge price heroImage')
     .populate('locationId');
 
   if (!booking) {

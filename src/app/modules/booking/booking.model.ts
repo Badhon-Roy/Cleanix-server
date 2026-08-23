@@ -14,10 +14,9 @@ const bookingSchema = new Schema<IBooking>(
       required: true,
     },
     serviceType: {
-      type: String,
-      enum: ['RESIDENTIAL', 'COMMERCIAL', 'MOVE_IN_OUT', 'POST_CONSTRUCTION'],
+      type: Schema.Types.ObjectId,
+      ref: 'ServiceCategory',
       required: true,
-      default: 'RESIDENTIAL',
     },
     sqft: {
       type: Number,

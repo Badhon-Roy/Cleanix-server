@@ -1,6 +1,5 @@
 import { Types } from 'mongoose';
 
-export type TBookingServiceType = 'RESIDENTIAL' | 'COMMERCIAL' | 'MOVE_IN_OUT' | 'POST_CONSTRUCTION';
 export type TBookingPaymentMethod = 'BKASH' | 'NAGAD' | 'STRIPE' | 'COD';
 export type TBookingPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
 export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -8,7 +7,7 @@ export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETE
 export interface IBooking {
   bookingRef: string;
   user: Types.ObjectId;
-  serviceType: TBookingServiceType;
+  serviceType: Types.ObjectId; // ref to ServiceCategory
   sqft: number;
   bedrooms: number;
   bathrooms: number;
