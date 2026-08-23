@@ -1,0 +1,59 @@
+import { Customer } from './customer.model';
+import { User } from '../user/user.model';
+import { ICustomer } from './customer.interface';
+import AppError from '../../errors/AppError';
+
+const formatCustomerResponse = (customerDoc: any) => {
+  const customerObj = customerDoc.toObject ? customerDoc.toObject() : customerDoc;
+  const isVip = (customerObj.totalBookings || 0) >= 5 || (customerObj.spentAmount || 0) >= 500;
+  
+  const createdAtDate = customerObj.createdAt ? new Date(customerObj.createdAt) : new Date();
+  const memberSince = `Member since ${createdAtDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+
+  return {
+    ...customerObj,
+    membershipBadge: isVip ? 'VIP Subscriber' : 'Customer Member',
+    membershipPlan: isVip ? 'Subscriber VIP (Monthly Active)' : 'Standard Customer (Active Account)',
+    memberSince,
+  };
+};
+
+const getMyProfile = async (userId: string) => {
+  const customer = await Customer.findOne({ user: userId, isDeleted: false });
+  if (!customer) {
+    throw new AppError(404, 'Customer profile not found!');
+  }
+  return formatCustomerResponse(customer);
+};
+
+const updateMyProfile = async (userId: string, payload: Partial<ICustomer>) => {
+  const customer = await Customer.findOne({ user: userId, isDeleted: false });
+  if (!customer) {
+    throw new AppError(404, 'Customer profile not found!');
+  }
+
+  const updatedData: Partial<ICustomer> = {};
+  if (payload.name !== undefined) updatedData.name = payload.name;
+  if (payload.phone !== undefined) updatedData.phone = payload.phone;
+  if (payload.avatar !== undefined) updatedData.avatar = payload.avatar;
+
+  const updatedCustomer = await Customer.findOneAndUpdate(
+    { user: userId, isDeleted: false },
+    { $set: updatedData },
+    { new: true, runValidators: true },
+  );
+
+  if (payload.name || payload.phone) {
+    const userUpdate: Record<string, any> = {};
+    if (payload.name) userUpdate.name = payload.name;
+    if (payload.phone) userUpdate.phone = payload.phone;
+    await User.findByIdAndUpdate(userId, { $set: userUpdate });
+  }
+
+  return formatCustomerResponse(updatedCustomer);
+};
+
+export const CustomerService = {
+  getMyProfile,
+  updateMyProfile,
+};
