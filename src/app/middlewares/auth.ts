@@ -8,12 +8,18 @@ import { User } from '../modules/user/user.model';
 const auth = (...requiredRoles: string[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     // 1. Extract token from HttpOnly cookie OR Authorization Bearer Header
-    let token = req.cookies?.accessToken;
+    let token = req.cookies?.accessToken || req.cookies?.cleanix_token;
 
     if (!token && req.headers.authorization) {
-      token = req.headers.authorization.startsWith('Bearer ')
-        ? req.headers.authorization.split(' ')[1]
-        : req.headers.authorization;
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        const extracted = authHeader.split(' ')[1];
+        if (extracted && extracted !== 'null' && extracted !== 'undefined' && extracted.trim() !== '') {
+          token = extracted;
+        }
+      } else if (authHeader !== 'null' && authHeader !== 'undefined' && authHeader.trim() !== '') {
+        token = authHeader;
+      }
     }
 
     if (!token) {

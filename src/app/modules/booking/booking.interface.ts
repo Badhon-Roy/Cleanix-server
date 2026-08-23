@@ -1,0 +1,31 @@
+import { Types } from 'mongoose';
+
+export type TBookingServiceType = 'RESIDENTIAL' | 'COMMERCIAL' | 'MOVE_IN_OUT' | 'POST_CONSTRUCTION';
+export type TBookingPaymentMethod = 'BKASH' | 'NAGAD' | 'STRIPE' | 'COD';
+export type TBookingPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
+export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+export interface IBooking {
+  bookingRef: string;
+  user: Types.ObjectId;
+  serviceType: TBookingServiceType;
+  sqft: number;
+  bedrooms: number;
+  bathrooms: number;
+  selectedAddons?: string[];
+  scheduledDate: string;
+  timeSlot: string;
+  address: string;
+  locationId?: Types.ObjectId;
+  paymentMethod: TBookingPaymentMethod;
+  paymentStatus: TBookingPaymentStatus;
+  status: TBookingStatus;
+  baseFee: number;
+  sqftCost: number;
+  bedroomCost: number;
+  bathroomCost: number;
+  addonsTotal: number;
+  totalAmount: number;
+  notes?: string;
+  isDeleted?: boolean;
+}
