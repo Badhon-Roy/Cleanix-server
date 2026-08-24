@@ -7,6 +7,7 @@ import { AddonRoutes } from '../modules/addon/addon.route';
 import { ServiceCategoryRoutes } from '../modules/servicecategory/servicecategory.route';
 import { TeamRoutes } from '../modules/team/team.route';
 import { CleanerRoutes } from '../modules/cleaner/cleaner.route';
+import { CoverageRoutes } from '../modules/coverage/coverage.route';
 
 const router = Router();
 
@@ -42,6 +43,10 @@ const moduleRoutes = [
   {
     path: '/cleaners',
     route: CleanerRoutes,
+  },
+  {
+    path: '/coverage',
+    route: CoverageRoutes,
   },
 ];
 

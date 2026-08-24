@@ -73,3 +73,9 @@ export const emitBookingUpdated = (data?: any) => {
     io.emit('booking_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitCoverageUpdated = (data?: any) => {
+  if (io) {
+    io.emit('coverage_updated', data || { timestamp: Date.now() });
+  }
+};
