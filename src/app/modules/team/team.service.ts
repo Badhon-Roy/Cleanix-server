@@ -119,7 +119,76 @@ const getAllTeamsFromDB = async (
     .populate('zone', 'zoneName district areasIncluded')
     .sort({ createdAt: -1 });
 
-  return teams;
+  const enrichedTeams = await Promise.all(
+    teams.map((t) => enrichTeamWithCleanerDuty(t))
+  );
+
+  return enrichedTeams;
+};
+
+const enrichTeamWithCleanerDuty = async (teamDoc: any) => {
+  const teamObj = typeof teamDoc.toObject === 'function' ? teamDoc.toObject() : { ...teamDoc };
+
+  const memberUserIds: string[] = [];
+  if (Array.isArray(teamObj.members)) {
+    teamObj.members.forEach((m: any) => {
+      const uId = m._id ? m._id.toString() : m.toString();
+      if (uId) memberUserIds.push(uId);
+    });
+  }
+  if (teamObj.leader) {
+    const lId = (teamObj.leader as any)._id ? (teamObj.leader as any)._id.toString() : teamObj.leader.toString();
+    if (lId) memberUserIds.push(lId);
+  }
+
+  if (memberUserIds.length === 0) return teamObj;
+
+  const cleaners = await Cleaner.find({
+    $or: [{ user: { $in: memberUserIds } }, { _id: { $in: memberUserIds } }],
+  });
+
+  const cleanerMap = new Map<string, any>();
+  cleaners.forEach((c) => {
+    if (c.user) cleanerMap.set(c.user.toString(), c);
+    if (c._id) cleanerMap.set(c._id.toString(), c);
+  });
+
+  if (Array.isArray(teamObj.members)) {
+    teamObj.members = teamObj.members.map((m: any) => {
+      const uId = m._id ? m._id.toString() : m.toString();
+      const cProf = cleanerMap.get(uId);
+      return {
+        _id: uId,
+        id: uId,
+        name: m.name || cProf?.name || 'Cleaner Staff',
+        email: m.email || cProf?.email || '',
+        phone: m.phone || cProf?.phone || '',
+        role: m.role || 'CLEANER',
+        status: m.status || 'APPROVED',
+        dutyStatus: cProf?.dutyStatus || 'OFF_DUTY',
+        dutyStartedAt: cProf?.dutyStartedAt || null,
+        dutyEndedAt: cProf?.dutyEndedAt || null,
+        totalDutyMinutes: cProf?.totalDutyMinutes || 0,
+        rating: cProf?.rating ?? 5.0,
+        completedJobs: cProf?.totalJobsDone ?? 0,
+        singleTeamVerified: true,
+      };
+    });
+  }
+
+  if (teamObj.leader) {
+    const lId = (teamObj.leader as any)._id ? (teamObj.leader as any)._id.toString() : teamObj.leader.toString();
+    const lProf = cleanerMap.get(lId);
+    if (lProf) {
+      teamObj.leader.dutyStatus = lProf.dutyStatus || 'OFF_DUTY';
+      teamObj.leader.dutyStartedAt = lProf.dutyStartedAt || null;
+      teamObj.leader.dutyEndedAt = lProf.dutyEndedAt || null;
+      teamObj.leader.totalDutyMinutes = lProf.totalDutyMinutes || 0;
+      teamObj.leader.rating = lProf.rating ?? 5.0;
+    }
+  }
+
+  return teamObj;
 };
 
 const getTeamByIdFromDB = async (
@@ -168,7 +237,7 @@ const getTeamByIdFromDB = async (
     }
   }
 
-  return team;
+  return enrichTeamWithCleanerDuty(team);
 };
 
 const updateTeamInDB = async (id: string, payload: Partial<ITeam>) => {

@@ -55,9 +55,38 @@ const updateCleanerApproval = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
+const getCleanerProfileMe = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user!;
+  const result = await CleanerService.getCleanerProfileMeFromDB(id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Cleaner profile retrieved successfully',
+    data: result,
+  });
+});
+
+const toggleDutyStatus = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { dutyStatus } = req.body || {};
+  const result = await CleanerService.toggleDutyStatusInDB(userId, dutyStatus);
+
+  emitCleanerUpdated(result);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: `Cleaner duty status set to ${result.dutyStatus} successfully`,
+    data: result,
+  });
+});
+
 export const CleanerController = {
   getAllCleaners,
   getCleanerById,
+  getCleanerProfileMe,
   updateCleanerProfile,
   updateCleanerApproval,
+  toggleDutyStatus,
 };

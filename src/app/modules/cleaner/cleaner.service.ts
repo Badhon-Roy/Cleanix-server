@@ -92,9 +92,70 @@ const updateCleanerApprovalInDB = async (cleanerId: string, payload: { status: '
   }
 };
 
+const getCleanerProfileMeFromDB = async (userId: string) => {
+  let cleaner = await Cleaner.findOne({ user: userId, isDeleted: false }).populate(
+    'user',
+    'name email phone role status isApproved',
+  );
+  if (!cleaner) {
+    cleaner = await Cleaner.findById(userId).populate(
+      'user',
+      'name email phone role status isApproved',
+    );
+  }
+  if (!cleaner || cleaner.isDeleted) {
+    throw new AppError(404, 'Cleaner profile not found');
+  }
+  return cleaner;
+};
+
+const toggleDutyStatusInDB = async (
+  userId: string,
+  targetStatus?: 'ON_DUTY' | 'OFF_DUTY' | 'IN_SERVICE',
+) => {
+  let cleaner = await Cleaner.findOne({ user: userId, isDeleted: false });
+  if (!cleaner) {
+    cleaner = await Cleaner.findById(userId);
+  }
+  if (!cleaner || cleaner.isDeleted) {
+    throw new AppError(404, 'Cleaner profile not found');
+  }
+
+  const newStatus = targetStatus
+    ? targetStatus
+    : cleaner.dutyStatus === 'ON_DUTY' || cleaner.dutyStatus === 'IN_SERVICE'
+    ? 'OFF_DUTY'
+    : 'ON_DUTY';
+
+  const now = new Date();
+
+  if (newStatus === 'ON_DUTY') {
+    cleaner.dutyStatus = 'ON_DUTY';
+    cleaner.dutyStartedAt = now;
+    cleaner.isAvailable = true;
+  } else if (newStatus === 'OFF_DUTY') {
+    if (cleaner.dutyStartedAt) {
+      const durationMs = now.getTime() - new Date(cleaner.dutyStartedAt).getTime();
+      const minutes = Math.max(1, Math.floor(durationMs / (1000 * 60)));
+      cleaner.totalDutyMinutes = (cleaner.totalDutyMinutes || 0) + minutes;
+    }
+    cleaner.dutyStatus = 'OFF_DUTY';
+    cleaner.dutyEndedAt = now;
+    cleaner.isAvailable = false;
+  } else if (newStatus === 'IN_SERVICE') {
+    cleaner.dutyStatus = 'IN_SERVICE';
+    cleaner.isAvailable = false;
+  }
+
+  await cleaner.save();
+  return cleaner;
+};
+
 export const CleanerService = {
   getAllCleanersFromDB,
   getCleanerByIdFromDB,
+  getCleanerProfileMeFromDB,
   updateCleanerProfileInDB,
   updateCleanerApprovalInDB,
+  toggleDutyStatusInDB,
 };

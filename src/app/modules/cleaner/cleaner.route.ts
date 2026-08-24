@@ -18,6 +18,18 @@ router.get(
   CleanerController.getCleanerById,
 );
 
+router.get(
+  '/profile/me',
+  auth('CLEANER', 'TEAM_LEADER', 'ADMIN'),
+  CleanerController.getCleanerProfileMe,
+);
+
+router.patch(
+  '/toggle-duty',
+  auth('CLEANER', 'TEAM_LEADER', 'ADMIN'),
+  CleanerController.toggleDutyStatus,
+);
+
 router.patch(
   '/me',
   auth('CLEANER', 'TEAM_LEADER'),

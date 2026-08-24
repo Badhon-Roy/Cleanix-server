@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 
 export type TGender = 'Male' | 'Female' | 'Other';
 export type TCleanerStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'BLOCKED';
+export type TDutyStatus = 'ON_DUTY' | 'OFF_DUTY' | 'IN_SERVICE';
 
 export interface ICleaner {
   _id?: string;
@@ -14,6 +15,10 @@ export interface ICleaner {
   gender?: TGender;
   nidNumber?: string;
   status: TCleanerStatus;
+  dutyStatus: TDutyStatus;
+  dutyStartedAt?: Date | null;
+  dutyEndedAt?: Date | null;
+  totalDutyMinutes?: number;
   isApproved: boolean;
   isAvailable: boolean;
   rating: number;

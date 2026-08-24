@@ -48,13 +48,30 @@ const cleanerSchema = new Schema<ICleaner>(
       enum: ['PENDING_APPROVAL', 'APPROVED', 'BLOCKED'],
       default: 'PENDING_APPROVAL',
     },
+    dutyStatus: {
+      type: String,
+      enum: ['ON_DUTY', 'OFF_DUTY', 'IN_SERVICE'],
+      default: 'OFF_DUTY',
+    },
+    dutyStartedAt: {
+      type: Date,
+      default: null,
+    },
+    dutyEndedAt: {
+      type: Date,
+      default: null,
+    },
+    totalDutyMinutes: {
+      type: Number,
+      default: 0,
+    },
     isApproved: {
       type: Boolean,
       default: false,
     },
     isAvailable: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     rating: {
       type: Number,
