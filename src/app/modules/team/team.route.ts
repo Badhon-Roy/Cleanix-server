@@ -32,6 +32,12 @@ router.patch(
   TeamController.updateTeam,
 );
 
+router.patch(
+  '/:id/leader-request',
+  auth('CLEANER', 'TEAM_LEADER'),
+  TeamController.respondLeaderRequest,
+);
+
 router.delete(
   '/:id',
   auth('ADMIN'),

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { CleanerService } from './cleaner.service';
+import { emitCleanerUpdated } from '../../socket/socket';
 
 const getAllCleaners = catchAsync(async (req: Request, res: Response) => {
   const result = await CleanerService.getAllCleanersFromDB(req.query);
@@ -30,6 +31,8 @@ const updateCleanerProfile = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.user!;
   const result = await CleanerService.updateCleanerProfileInDB(id, req.body);
 
+  emitCleanerUpdated(result);
+
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -41,6 +44,8 @@ const updateCleanerProfile = catchAsync(async (req: Request, res: Response) => {
 const updateCleanerApproval = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const result = await CleanerService.updateCleanerApprovalInDB(id, req.body);
+
+  emitCleanerUpdated(result);
 
   sendResponse(res, {
     statusCode: 200,

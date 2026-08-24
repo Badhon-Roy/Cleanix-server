@@ -6,7 +6,7 @@ const createTeamValidationSchema = z.object({
     teamName: z.string().min(1, 'Team name is required'),
     teamImage: z.string().min(1, 'Team image URL is required'),
     leader: z.string().min(1, 'Team leader ID is required'),
-    members: z.array(z.string()).min(1, 'At least one team member is required'),
+    members: z.array(z.string()).optional().default([]),
     zone: z.string().min(1, 'Coverage zone is required'),
     commissionRate: z.number().optional().default(10),
     cleanerPoolShare: z.number().optional().default(40),

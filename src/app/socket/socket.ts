@@ -79,3 +79,21 @@ export const emitCoverageUpdated = (data?: any) => {
     io.emit('coverage_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitTeamUpdated = (data?: any) => {
+  if (io) {
+    io.emit('team_updated', data || { timestamp: Date.now() });
+  }
+};
+
+export const emitCleanerUpdated = (data?: any) => {
+  if (io) {
+    io.emit('cleaner_updated', data || { timestamp: Date.now() });
+  }
+};
+
+export const emitLeaderRequestUpdated = (data?: any) => {
+  if (io) {
+    io.emit('leader_request_updated', data || { timestamp: Date.now() });
+  }
+};

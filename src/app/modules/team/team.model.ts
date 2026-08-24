@@ -24,6 +24,11 @@ const teamSchema = new Schema<ITeam>(
       ref: 'User',
       required: [true, 'Team Leader is required'],
     },
+    leaderRequestStatus: {
+      type: String,
+      enum: ['PENDING', 'ACCEPTED', 'DECLINED'],
+      default: 'PENDING',
+    },
     members: [
       {
         type: Schema.Types.ObjectId,

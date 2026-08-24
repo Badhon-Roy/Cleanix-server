@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 
 export type TTeamStatus = 'ACTIVE' | 'INACTIVE';
+export type TLeaderRequestStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
 
 export interface ITeam {
   _id?: string;
@@ -8,6 +9,7 @@ export interface ITeam {
   teamName: string;
   teamImage: string;
   leader: Types.ObjectId;
+  leaderRequestStatus?: TLeaderRequestStatus;
   members: Types.ObjectId[];
   zone: Types.ObjectId;
   commissionRate: number;
