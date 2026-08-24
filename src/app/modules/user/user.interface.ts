@@ -1,6 +1,6 @@
 import { Model, HydratedDocument } from 'mongoose';
 
-export type TUserRole = 'CUSTOMER' | 'CLEANER' | 'ADMIN';
+export type TUserRole = 'CUSTOMER' | 'CLEANER' | 'ADMIN' | 'TEAM_LEADER';
 export type TUserStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'BLOCKED';
 export type TGender = 'Male' | 'Female' | 'Other';
 
