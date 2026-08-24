@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import AppError from '../../errors/AppError';
 import { ITeam } from './team.interface';
 import { Team } from './team.model';
@@ -82,11 +83,22 @@ const createTeamInDB = async (payload: ITeam) => {
   return team;
 };
 
-const getAllTeamsFromDB = async (query: Record<string, unknown>) => {
+const getAllTeamsFromDB = async (
+  query: Record<string, unknown>,
+  jwtUser?: { id: string; role: string; email: string },
+) => {
   const filter: Record<string, unknown> = { isDeleted: false };
 
   if (query.status) filter.status = query.status;
   if (query.zone) filter.zone = query.zone;
+
+  // Strict Authorization & Data Isolation:
+  // If user is a TEAM_LEADER, restrict results ONLY to their own assigned team squad.
+  if (jwtUser && jwtUser.role === 'TEAM_LEADER') {
+    filter.leader = jwtUser.id;
+  } else if (jwtUser && jwtUser.role === 'CLEANER') {
+    filter.$or = [{ leader: jwtUser.id }, { members: jwtUser.id }];
+  }
 
   const teams = await Team.find(filter)
     .populate('leader', 'name email phone role status')
@@ -97,15 +109,52 @@ const getAllTeamsFromDB = async (query: Record<string, unknown>) => {
   return teams;
 };
 
-const getTeamByIdFromDB = async (id: string) => {
-  const team = await Team.findById(id)
+const getTeamByIdFromDB = async (
+  id: string,
+  jwtUser?: { id: string; role: string; email: string },
+) => {
+  let queryObj: Record<string, unknown> = { isDeleted: false };
+
+  if (Types.ObjectId.isValid(id)) {
+    queryObj._id = id;
+  } else {
+    const formattedName = id.replace(/-/g, ' ');
+    queryObj.$or = [
+      { teamCode: id },
+      { teamName: { $regex: new RegExp(`^${formattedName}$`, 'i') } },
+    ];
+  }
+
+  const team = await Team.findOne(queryObj)
     .populate('leader', 'name email phone role status')
     .populate('members', 'name email phone role status')
     .populate('zone', 'zoneName district areasIncluded');
 
-  if (!team || team.isDeleted) {
+  if (!team) {
     throw new AppError(404, 'Team squad not found');
   }
+
+  // Strict Data Isolation Check for Team Leader:
+  if (jwtUser && jwtUser.role === 'TEAM_LEADER') {
+    const leaderUserObjId =
+      (team.leader as any)?._id?.toString() || team.leader?.toString();
+
+    // Check cleaner profile ID if leader field points to cleaner ID
+    const cleanerProfile = await Cleaner.findOne({ user: jwtUser.id });
+    const cleanerId = cleanerProfile?._id?.toString();
+
+    const isMatch =
+      leaderUserObjId === jwtUser.id ||
+      (cleanerId && leaderUserObjId === cleanerId);
+
+    if (!isMatch) {
+      throw new AppError(
+        403,
+        'Forbidden! As a Team Leader, you are strictly limited to your own team dashboard.',
+      );
+    }
+  }
+
   return team;
 };
 

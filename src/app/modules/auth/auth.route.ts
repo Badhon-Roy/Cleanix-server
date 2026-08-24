@@ -47,13 +47,13 @@ router.get('/google/callback', AuthController.googleAuthCallback);
 
 router.get(
   '/me',
-  auth('CUSTOMER', 'CLEANER', 'ADMIN'),
+  auth('CUSTOMER', 'CLEANER', 'ADMIN', 'TEAM_LEADER'),
   AuthController.getMe,
 );
 
 router.post(
   '/change-password',
-  auth('CUSTOMER', 'CLEANER', 'ADMIN'),
+  auth('CUSTOMER', 'CLEANER', 'ADMIN', 'TEAM_LEADER'),
   validateRequest(AuthValidation.changePasswordValidationSchema),
   AuthController.changePassword,
 );

@@ -5,6 +5,7 @@ import { User } from '../user/user.model';
 import { Customer } from '../customer/customer.model';
 import { Cleaner } from '../cleaner/cleaner.model';
 import { Admin } from '../admin/admin.model';
+import { Team } from '../team/team.model';
 import { EmailVerification } from './emailVerification.model';
 import otpGenerator from 'otp-generator';
 import { sendEmail, generateOTPEmailHTML } from '../../utils/sendEmail';
@@ -448,6 +449,33 @@ const googleLogin = async (payload: TGoogleLoginUser) => {
   };
 };
 
+const getLeadTeamHelper = async (userId: any) => {
+  const teamDoc = await Team.findOne({
+    leader: userId,
+    isDeleted: false,
+  }).populate('zone', 'zoneName district');
+
+  if (!teamDoc) return null;
+
+  const slug = teamDoc.teamName
+    ? teamDoc.teamName
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+    : 'team-squad';
+
+  return {
+    teamId: teamDoc._id,
+    teamCode: teamDoc.teamCode,
+    teamName: teamDoc.teamName,
+    teamSlug: slug,
+    leaderRequestStatus: teamDoc.leaderRequestStatus,
+    status: teamDoc.status,
+    zone: teamDoc.zone,
+  };
+};
+
 const getMe = async (userId: string, role: string) => {
   const user = await User.findById(userId);
   if (!user || user.isDeleted) {
@@ -457,11 +485,13 @@ const getMe = async (userId: string, role: string) => {
   let profile: any = null;
   if (role === 'CUSTOMER') {
     profile = await Customer.findOne({ user: userId, isDeleted: false });
-  } else if (role === 'CLEANER') {
+  } else if (role === 'CLEANER' || role === 'TEAM_LEADER') {
     profile = await Cleaner.findOne({ user: userId, isDeleted: false });
   } else if (role === 'ADMIN') {
     profile = await Admin.findOne({ user: userId, isDeleted: false });
   }
+
+  const leadTeam = await getLeadTeamHelper(user._id);
 
   return {
     _id: user._id,
@@ -473,6 +503,7 @@ const getMe = async (userId: string, role: string) => {
     isApproved: user.isApproved,
     avatar: profile?.avatar || undefined,
     profile,
+    leadTeam,
   };
 };
 

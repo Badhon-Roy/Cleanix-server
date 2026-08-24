@@ -25,7 +25,7 @@ const createTeam = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllTeams = catchAsync(async (req: Request, res: Response) => {
-  const result = await TeamService.getAllTeamsFromDB(req.query);
+  const result = await TeamService.getAllTeamsFromDB(req.query, req.user);
 
   sendResponse(res, {
     statusCode: 200,
@@ -37,7 +37,7 @@ const getAllTeams = catchAsync(async (req: Request, res: Response) => {
 
 const getTeamById = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const result = await TeamService.getTeamByIdFromDB(id);
+  const result = await TeamService.getTeamByIdFromDB(id, req.user);
 
   sendResponse(res, {
     statusCode: 200,

@@ -8,19 +8,19 @@ const router = Router();
 
 router.get(
   '/',
-  auth('ADMIN', 'CUSTOMER', 'CLEANER'),
+  auth('ADMIN', 'CUSTOMER', 'CLEANER', 'TEAM_LEADER'),
   CleanerController.getAllCleaners,
 );
 
 router.get(
   '/:id',
-  auth('ADMIN', 'CUSTOMER', 'CLEANER'),
+  auth('ADMIN', 'CUSTOMER', 'CLEANER', 'TEAM_LEADER'),
   CleanerController.getCleanerById,
 );
 
 router.patch(
   '/me',
-  auth('CLEANER'),
+  auth('CLEANER', 'TEAM_LEADER'),
   validateRequest(CleanerValidation.updateCleanerProfileValidationSchema),
   CleanerController.updateCleanerProfile,
 );
