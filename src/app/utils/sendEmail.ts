@@ -85,3 +85,44 @@ export const generateOTPEmailHTML = (name: string, otp: string) => {
     </div>
   `;
 };
+
+export const generateCleanerApprovalEmailHTML = (name: string, email: string) => {
+  return `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <div style="text-align: center; padding-bottom: 24px; border-bottom: 1px solid #f1f5f9;">
+        <div style="display: inline-block; width: 48px; height: 48px; background-color: #007eff; color: white; font-size: 24px; font-weight: 900; line-height: 48px; border-radius: 14px;">C</div>
+        <h2 style="color: #0d274c; margin: 12px 0 0 0; font-size: 26px; font-weight: 800; tracking-tight: -0.5px;">Cleanix</h2>
+        <p style="color: #007eff; margin: 4px 0 0 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Certified Field Service Staff Portal</p>
+      </div>
+
+      <div style="padding: 32px 0; text-align: left;">
+        <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 24px;">
+          <h3 style="color: #065f46; font-size: 20px; font-weight: 800; margin: 0;">🎉 Congratulations! Your Staff Account is Approved</h3>
+          <p style="color: #047857; font-size: 13px; margin: 6px 0 0 0; font-weight: 600;">Cleanix Admin HQ has verified & activated your cleaner profile.</p>
+        </div>
+
+        <p style="color: #334155; font-size: 15px; line-height: 1.6;">Hello <strong>${name}</strong>,</p>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">We are thrilled to inform you that your application for <strong>Cleanix Certified Cleaner Staff</strong> has been officially reviewed and <strong>APPROVED</strong> by the management team.</p>
+
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin: 24px 0;">
+          <h4 style="color: #0d274c; margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Account Overview & Access Credentials:</h4>
+          <p style="color: #475569; font-size: 13px; margin: 4px 0;"><strong>Registered Email:</strong> ${email}</p>
+          <p style="color: #475569; font-size: 13px; margin: 4px 0;"><strong>Account Status:</strong> <span style="color: #059669; font-weight: 700;">APPROVED / ACTIVE</span></p>
+          <p style="color: #475569; font-size: 13px; margin: 4px 0;"><strong>Portal Access:</strong> Certified Cleaner Dispatch Portal</p>
+        </div>
+
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">You can now log into the Cleanix Field Dispatch Portal with your email and password to view assigned jobs, update shift status, and access payouts.</p>
+
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="http://localhost:3000/login" style="display: inline-block; background-color: #007eff; color: #ffffff; text-decoration: none; font-weight: 800; font-size: 14px; padding: 14px 32px; border-radius: 14px; box-shadow: 0 4px 12px rgba(0,126,255,0.3);">Login to Cleaner Portal ➔</a>
+        </div>
+
+        <p style="color: #64748b; font-size: 13px; line-height: 1.6;">If you have any questions or need assistance with your dispatch schedule, please reach out to Cleanix Support at support@cleanix.com.</p>
+      </div>
+
+      <div style="text-align: center; padding-top: 24px; border-top: 1px solid #f1f5f9; color: #94a3b8; font-size: 12px;">
+        <p style="margin: 0;">&copy; ${new Date().getFullYear()} Cleanix Automation Platform. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+};

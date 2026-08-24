@@ -2,6 +2,7 @@ import AppError from '../../errors/AppError';
 import { ITeam } from './team.interface';
 import { Team } from './team.model';
 import { User } from '../user/user.model';
+import { Cleaner } from '../cleaner/cleaner.model';
 
 const createTeamInDB = async (payload: ITeam) => {
   const isTeamCodeExists = await Team.findOne({ teamCode: payload.teamCode, isDeleted: false });
@@ -200,7 +201,13 @@ const respondLeaderRequestInDB = async (
   }
 
   // Check if current user is the assigned leader
-  const isMatch = team.leader.toString() === userId.toString();
+  const cleanerProfile = await Cleaner.findOne({ user: userId });
+  const cleanerId = cleanerProfile?._id?.toString();
+
+  const isMatch =
+    team.leader.toString() === userId.toString() ||
+    (cleanerId && team.leader.toString() === cleanerId);
+
   if (!isMatch) {
     throw new AppError(403, 'You are not the assigned leader of this team squad');
   }

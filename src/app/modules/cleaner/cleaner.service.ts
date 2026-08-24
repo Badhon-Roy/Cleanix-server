@@ -3,6 +3,7 @@ import AppError from '../../errors/AppError';
 import { Cleaner } from './cleaner.model';
 import { User } from '../user/user.model';
 import { ICleaner } from './cleaner.interface';
+import { sendEmail, generateCleanerApprovalEmailHTML } from '../../utils/sendEmail';
 
 const getAllCleanersFromDB = async (query: Record<string, unknown>) => {
   const filter: Record<string, unknown> = { isDeleted: false };
@@ -68,6 +69,20 @@ const updateCleanerApprovalInDB = async (cleanerId: string, payload: { status: '
 
     await session.commitTransaction();
     await session.endSession();
+
+    // 3. Send Professional Approval Email Notification upon ACCEPTANCE
+    if (payload.status === 'APPROVED' && payload.isApproved) {
+      try {
+        const html = generateCleanerApprovalEmailHTML(cleaner.name, cleaner.email);
+        await sendEmail({
+          to: cleaner.email,
+          subject: 'Cleanix - Your Cleaner Staff Account Has Been Approved! 🎉',
+          html,
+        });
+      } catch (emailErr) {
+        console.error('⚠️ [APPROVAL EMAIL NOTICE] Failed to deliver approval email:', emailErr);
+      }
+    }
 
     return cleaner;
   } catch (error) {
