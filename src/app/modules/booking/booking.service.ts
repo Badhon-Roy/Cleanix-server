@@ -4,6 +4,7 @@ import AppError from '../../errors/AppError';
 import { Addon } from '../addon/addon.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
 import { Team } from '../team/team.model';
+import { Cleaner } from '../cleaner/cleaner.model';
 import { emitBookingCreated, emitBookingUpdated } from '../../socket/socket';
 import { TeamAssignmentService } from '../teamAssignment/teamAssignment.service';
 
@@ -248,6 +249,15 @@ const getAllBookingsAdmin = async () => {
         { path: 'zone', select: 'zoneName district' },
       ],
     })
+    .populate({
+      path: 'teamRequests.team',
+      select: 'teamName teamCode leader status zone',
+      populate: { path: 'leader', select: 'name email phone rating' },
+    })
+    .populate({
+      path: 'teamRequests.requestedBy',
+      select: 'name email phone',
+    })
     .populate('locationId')
     .sort({ createdAt: -1 });
 
@@ -271,13 +281,25 @@ const updateBookingStatusAdmin = async (
     const targetTeam = await Team.findById(payload.teamId);
     if (targetTeam) {
       if (targetTeam.leaderRequestStatus !== 'ACCEPTED' || targetTeam.status !== 'ACTIVE') {
-        throw new AppError(
-          400,
-          `Cannot assign service booking to '${targetTeam.teamName}'. Team Leader has not accepted invitation request yet!`,
-        );
+        targetTeam.leaderRequestStatus = 'ACCEPTED';
+        targetTeam.status = 'ACTIVE';
+        await targetTeam.save();
       }
       booking.assignedTeam = targetTeam._id as any;
       booking.cleanerTeam = `${targetTeam.teamName} (${targetTeam.teamCode})`;
+      booking.status = 'ASSIGNED';
+
+      if (booking.teamRequests && booking.teamRequests.length > 0) {
+        booking.teamRequests.forEach((req) => {
+          const reqTeamId = (req.team as any)?._id || req.team;
+          if (String(reqTeamId) === String(targetTeam._id)) {
+            req.status = 'APPROVED';
+          } else {
+            req.status = 'REJECTED';
+          }
+        });
+      }
+
       await TeamAssignmentService.syncTeamAssignment(
         booking._id.toString(),
         targetTeam._id.toString(),
@@ -294,13 +316,25 @@ const updateBookingStatusAdmin = async (
     });
     if (foundTeam) {
       if (foundTeam.leaderRequestStatus !== 'ACCEPTED' || foundTeam.status !== 'ACTIVE') {
-        throw new AppError(
-          400,
-          `Cannot assign service booking to '${foundTeam.teamName}'. Team Leader has not accepted invitation request yet!`,
-        );
+        foundTeam.leaderRequestStatus = 'ACCEPTED';
+        foundTeam.status = 'ACTIVE';
+        await foundTeam.save();
       }
       booking.assignedTeam = foundTeam._id as any;
       booking.cleanerTeam = `${foundTeam.teamName} (${foundTeam.teamCode})`;
+      booking.status = 'ASSIGNED';
+
+      if (booking.teamRequests && booking.teamRequests.length > 0) {
+        booking.teamRequests.forEach((req) => {
+          const reqTeamId = (req.team as any)?._id || req.team;
+          if (String(reqTeamId) === String(foundTeam._id)) {
+            req.status = 'APPROVED';
+          } else {
+            req.status = 'REJECTED';
+          }
+        });
+      }
+
       await TeamAssignmentService.syncTeamAssignment(
         booking._id.toString(),
         foundTeam._id.toString(),
@@ -351,20 +385,26 @@ const assignTeamToBookingAdmin = async (
   }
 
   if (targetTeam) {
-    if (targetTeam.leaderRequestStatus !== 'ACCEPTED') {
-      throw new AppError(
-        400,
-        `Cannot assign service booking to '${targetTeam.teamName}'. Team Leader has not accepted the squad invitation request yet!`,
-      );
-    }
-    if (targetTeam.status !== 'ACTIVE') {
-      throw new AppError(
-        400,
-        `Cannot assign service booking to '${targetTeam.teamName}'. Team status is currently INACTIVE!`,
-      );
+    if (targetTeam.leaderRequestStatus !== 'ACCEPTED' || targetTeam.status !== 'ACTIVE') {
+      targetTeam.leaderRequestStatus = 'ACCEPTED';
+      targetTeam.status = 'ACTIVE';
+      await targetTeam.save();
     }
     booking.assignedTeam = targetTeam._id as any;
     booking.cleanerTeam = `${targetTeam.teamName} (${targetTeam.teamCode})`;
+    booking.status = 'ASSIGNED';
+
+    if (booking.teamRequests && booking.teamRequests.length > 0) {
+      booking.teamRequests.forEach((req) => {
+        const reqTeamId = (req.team as any)?._id || req.team;
+        if (String(reqTeamId) === String(targetTeam._id)) {
+          req.status = 'APPROVED';
+        } else {
+          req.status = 'REJECTED';
+        }
+      });
+    }
+
     await TeamAssignmentService.syncTeamAssignment(
       booking._id.toString(),
       targetTeam._id.toString(),
@@ -373,15 +413,15 @@ const assignTeamToBookingAdmin = async (
     );
   } else if (payload.cleanerTeam) {
     booking.cleanerTeam = payload.cleanerTeam;
+    booking.status = 'ASSIGNED';
   }
 
   if (payload.notes) {
     booking.notes = payload.notes;
   }
 
-  // Auto update status to CONFIRMED if currently PENDING
-  if (booking.status === 'PENDING') {
-    booking.status = 'CONFIRMED';
+  if (booking.assignedTeam || (booking.cleanerTeam && booking.cleanerTeam !== 'Unassigned')) {
+    booking.status = 'ASSIGNED';
   }
 
   await booking.save();
@@ -423,6 +463,126 @@ const cancelBooking = async (userId: string, bookingId: string) => {
   return booking;
 };
 
+const getAvailableBookingsForTeamsFromDB = async () => {
+  const filter: Record<string, unknown> = {
+    isDeleted: false,
+    status: { $ne: 'CANCELLED' },
+    $or: [
+      { assignedTeam: { $exists: false } },
+      { assignedTeam: null },
+    ],
+  };
+
+  const availableBookings = await Booking.find(filter)
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('locationId', 'address city zipCode')
+    .populate({
+      path: 'teamRequests.team',
+      select: 'teamName teamCode leader status',
+      populate: { path: 'leader', select: 'name email phone rating' },
+    })
+    .populate({
+      path: 'teamRequests.requestedBy',
+      select: 'name email phone',
+    })
+    .sort({ createdAt: -1 });
+
+  return availableBookings;
+};
+
+const requestBookingByTeamInDB = async (
+  bookingId: string,
+  jwtUser: { id: string; role: string; email: string },
+  teamSlug?: string,
+) => {
+  let team = null;
+
+  if (teamSlug) {
+    let queryObj: Record<string, unknown> = { isDeleted: false };
+    if (Types.ObjectId.isValid(teamSlug)) {
+      queryObj._id = teamSlug;
+      team = await Team.findOne(queryObj);
+    } else {
+      const formattedName = teamSlug.replace(/-/g, ' ');
+      queryObj.$or = [
+        { teamCode: { $regex: new RegExp(teamSlug.trim(), 'i') } },
+        { teamName: { $regex: new RegExp(formattedName.trim(), 'i') } },
+      ];
+      team = await Team.findOne(queryObj);
+    }
+  }
+
+  if (!team && jwtUser) {
+    team = await Team.findOne({ leader: jwtUser.id, isDeleted: false });
+  }
+
+  if (!team && jwtUser) {
+    const cleanerProfile = await Cleaner.findOne({ user: jwtUser.id });
+    if (cleanerProfile) {
+      team = await Team.findOne({
+        isDeleted: false,
+        $or: [{ leader: cleanerProfile._id }, { members: cleanerProfile._id }],
+      });
+    }
+  }
+
+  if (!team) {
+    throw new AppError(404, 'Team not found for the logged-in team leader!');
+  }
+
+  const booking = await Booking.findById(bookingId);
+  if (!booking || booking.isDeleted) {
+    throw new AppError(404, 'Customer service booking not found!');
+  }
+
+  if (booking.assignedTeam) {
+    throw new AppError(400, 'This booking has already been assigned to a team!');
+  }
+
+  if (!booking.teamRequests) {
+    booking.teamRequests = [];
+  }
+
+  const existingIndex = booking.teamRequests.findIndex(
+    (r) => r.team.toString() === team!._id.toString(),
+  );
+
+  if (existingIndex > -1) {
+    booking.teamRequests[existingIndex].status = 'PENDING';
+    booking.teamRequests[existingIndex].requestedAt = new Date();
+  } else {
+    booking.teamRequests.push({
+      team: team._id as any,
+      requestedBy: new Types.ObjectId(jwtUser.id) as any,
+      requestedAt: new Date(),
+      status: 'PENDING',
+    });
+  }
+
+  await booking.save();
+
+  const updatedDoc = await Booking.findById(booking._id)
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('locationId')
+    .populate({
+      path: 'teamRequests.team',
+      select: 'teamName teamCode leader status',
+      populate: { path: 'leader', select: 'name email phone rating' },
+    })
+    .populate({
+      path: 'teamRequests.requestedBy',
+      select: 'name email phone',
+    });
+
+  if (updatedDoc) {
+    emitBookingUpdated(updatedDoc);
+  }
+
+  return updatedDoc;
+};
+
 export const BookingService = {
   createBooking,
   getMyBookings,
@@ -431,4 +591,6 @@ export const BookingService = {
   updateBookingStatusAdmin,
   assignTeamToBookingAdmin,
   cancelBooking,
+  getAvailableBookingsForTeamsFromDB,
+  requestBookingByTeamInDB,
 };

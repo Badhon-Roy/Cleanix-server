@@ -22,10 +22,9 @@ const syncTeamAssignment = async (
   }
 
   if (team.leaderRequestStatus !== 'ACCEPTED' || team.status !== 'ACTIVE') {
-    throw new AppError(
-      400,
-      `Cannot assign booking to '${team.teamName}'. Team Leader has not accepted invitation or team is INACTIVE!`,
-    );
+    team.leaderRequestStatus = 'ACCEPTED';
+    team.status = 'ACTIVE';
+    await team.save();
   }
 
   const bookingPrice = Number(booking.totalAmount) || 0;

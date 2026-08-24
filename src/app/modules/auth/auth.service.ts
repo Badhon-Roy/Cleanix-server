@@ -266,6 +266,25 @@ const loginUser = async (payload: TLoginUser) => {
     profile = await Admin.findOne({ user: user._id, isDeleted: false });
   }
 
+  let leadTeam = null;
+  const foundTeam = await Team.findOne({
+    isDeleted: false,
+    $or: [{ leader: user._id }, { leader: profile ? (profile as any)._id : null }],
+  });
+  if (foundTeam) {
+    const rawSlug = foundTeam.teamName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    leadTeam = {
+      _id: foundTeam._id,
+      teamName: foundTeam.teamName,
+      teamCode: foundTeam.teamCode,
+      teamSlug: rawSlug,
+    };
+  }
+
   // 5. Issue Tokens
   const jwtPayload = {
     id: user._id.toString(),
@@ -297,6 +316,7 @@ const loginUser = async (payload: TLoginUser) => {
       status: user.status,
       isApproved: user.isApproved,
       avatar: (profile as any)?.avatar || undefined,
+      leadTeam,
       profile,
     },
   };
@@ -463,7 +483,7 @@ const getLeadTeamHelper = async (userId: any) => {
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
-    : 'team-squad';
+    : '';
 
   return {
     teamId: teamDoc._id,

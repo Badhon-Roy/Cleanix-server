@@ -2,12 +2,19 @@ import { Types } from 'mongoose';
 
 export type TBookingPaymentMethod = 'BKASH' | 'NAGAD' | 'STRIPE' | 'COD';
 export type TBookingPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
-export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 export interface IBookingServiceItem {
   name: string;
   value: number;
   addOn: boolean;
+}
+
+export interface ITeamBookingRequest {
+  team: Types.ObjectId;
+  requestedBy?: Types.ObjectId;
+  requestedAt: Date;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 export interface IBooking {
@@ -24,6 +31,7 @@ export interface IBooking {
   status: TBookingStatus;
   cleanerTeam?: string;
   assignedTeam?: Types.ObjectId;
+  teamRequests?: ITeamBookingRequest[];
   services: IBookingServiceItem[];
   addonsTotal: number;
   totalAmount: number;

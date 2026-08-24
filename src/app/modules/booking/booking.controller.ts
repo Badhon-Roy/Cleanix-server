@@ -84,6 +84,30 @@ const cancelBooking = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAvailableBookings = catchAsync(async (req: Request, res: Response) => {
+  const result = await BookingService.getAvailableBookingsForTeamsFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Available unassigned bookings retrieved successfully!',
+    data: result,
+  });
+});
+
+const requestBookingByTeam = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  const teamSlug = (req.query.teamSlug as string) || (req.body.teamSlug as string);
+  const result = await BookingService.requestBookingByTeamInDB(bookingId, req.user!, teamSlug);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Booking request sent to admin successfully!',
+    data: result,
+  });
+});
+
 export const BookingController = {
   createBooking,
   getMyBookings,
@@ -92,4 +116,6 @@ export const BookingController = {
   updateBookingStatusAdmin,
   assignTeamToBookingAdmin,
   cancelBooking,
+  getAvailableBookings,
+  requestBookingByTeam,
 };

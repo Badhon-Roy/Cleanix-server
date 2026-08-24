@@ -60,7 +60,7 @@ const bookingSchema = new Schema<IBooking>(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+      enum: ['PENDING', 'CONFIRMED', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
       default: 'CONFIRMED',
     },
     cleanerTeam: {
@@ -71,6 +71,14 @@ const bookingSchema = new Schema<IBooking>(
       type: Schema.Types.ObjectId,
       ref: 'Team',
     },
+    teamRequests: [
+      {
+        team: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
+        requestedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+        requestedAt: { type: Date, default: Date.now },
+        status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED'], default: 'PENDING' },
+      },
+    ],
     services: [bookingServiceItemSchema],
     addonsTotal: {
       type: Number,
