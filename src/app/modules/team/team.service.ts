@@ -71,6 +71,7 @@ const createTeamInDB = async (payload: ITeam) => {
   }
 
   payload.leaderRequestStatus = 'PENDING';
+  payload.status = 'INACTIVE'; // Team squad cannot be ACTIVE until Team Leader accepts request
   const team = await Team.create(payload);
 
   if (team.leader) {
@@ -87,9 +88,21 @@ const getAllTeamsFromDB = async (
   query: Record<string, unknown>,
   jwtUser?: { id: string; role: string; email: string },
 ) => {
+  // Auto-sanitize legacy documents in database: teams where leaderRequestStatus is not ACCEPTED must be INACTIVE
+  await Team.updateMany(
+    { isDeleted: false, leaderRequestStatus: { $ne: 'ACCEPTED' }, status: 'ACTIVE' },
+    { $set: { status: 'INACTIVE' } }
+  );
+
   const filter: Record<string, unknown> = { isDeleted: false };
 
-  if (query.status) filter.status = query.status;
+  if (query.status === 'ACTIVE' || query.activeOnly === 'true') {
+    filter.status = 'ACTIVE';
+    filter.leaderRequestStatus = 'ACCEPTED';
+  } else if (query.status) {
+    filter.status = query.status;
+  }
+
   if (query.zone) filter.zone = query.zone;
 
   // Strict Authorization & Data Isolation:
@@ -187,9 +200,23 @@ const updateTeamInDB = async (id: string, payload: Partial<ITeam>) => {
 
   const targetLeader = payload.leader || team.leader;
 
-  // If leader is changing, reset leaderRequestStatus to PENDING
+  // If leader is changing, reset leaderRequestStatus to PENDING and status to INACTIVE
   if (payload.leader && payload.leader.toString() !== team.leader.toString()) {
     payload.leaderRequestStatus = 'PENDING';
+    payload.status = 'INACTIVE';
+  }
+
+  const effectiveLeaderRequestStatus = payload.leaderRequestStatus || team.leaderRequestStatus || 'PENDING';
+
+  if (payload.status === 'ACTIVE' && effectiveLeaderRequestStatus !== 'ACCEPTED') {
+    throw new AppError(
+      400,
+      'Team squad cannot be set to ACTIVE until the assigned Team Leader accepts the invitation request!'
+    );
+  }
+
+  if (effectiveLeaderRequestStatus !== 'ACCEPTED') {
+    payload.status = 'INACTIVE';
   }
 
   // Validation: A cleaner can be the Team Leader of ONLY ONE team squad!
@@ -278,12 +305,14 @@ const respondLeaderRequestInDB = async (
 
   if (action === 'ACCEPT') {
     team.leaderRequestStatus = 'ACCEPTED';
+    team.status = 'ACTIVE';
     await team.save();
 
     // Promote User Role to 'TEAM_LEADER'
     await User.findByIdAndUpdate(userId, { role: 'TEAM_LEADER' });
   } else {
     team.leaderRequestStatus = 'DECLINED';
+    team.status = 'INACTIVE';
     await team.save();
   }
 

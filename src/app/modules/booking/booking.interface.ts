@@ -23,6 +23,7 @@ export interface IBooking {
   paymentStatus: TBookingPaymentStatus;
   status: TBookingStatus;
   cleanerTeam?: string;
+  assignedTeam?: Types.ObjectId;
   services: IBookingServiceItem[];
   addonsTotal: number;
   totalAmount: number;

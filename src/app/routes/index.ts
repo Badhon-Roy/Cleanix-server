@@ -9,6 +9,7 @@ import { TeamRoutes } from '../modules/team/team.route';
 import { CleanerRoutes } from '../modules/cleaner/cleaner.route';
 import { CoverageRoutes } from '../modules/coverage/coverage.route';
 import { LeaderAppointmentRoutes } from '../modules/leaderAppointment/leaderAppointment.route';
+import { TeamAssignmentRoutes } from '../modules/teamAssignment/teamAssignment.route';
 
 const router = Router();
 
@@ -52,6 +53,10 @@ const moduleRoutes = [
   {
     path: '/leader-appointments',
     route: LeaderAppointmentRoutes,
+  },
+  {
+    path: '/team-assignments',
+    route: TeamAssignmentRoutes,
   },
 ];
 

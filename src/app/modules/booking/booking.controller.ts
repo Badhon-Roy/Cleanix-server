@@ -60,6 +60,18 @@ const updateBookingStatusAdmin = catchAsync(async (req: Request, res: Response) 
   });
 });
 
+const assignTeamToBookingAdmin = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  const result = await BookingService.assignTeamToBookingAdmin(bookingId, req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Field Team assigned to booking service successfully!',
+    data: result,
+  });
+});
+
 const cancelBooking = catchAsync(async (req: Request, res: Response) => {
   const bookingId = req.params.bookingId as string;
   const result = await BookingService.cancelBooking(req.user!.id, bookingId);
@@ -78,5 +90,6 @@ export const BookingController = {
   getSingleBooking,
   getAllBookingsAdmin,
   updateBookingStatusAdmin,
+  assignTeamToBookingAdmin,
   cancelBooking,
 };

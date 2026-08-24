@@ -3,7 +3,9 @@ import { Booking } from './booking.model';
 import AppError from '../../errors/AppError';
 import { Addon } from '../addon/addon.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
+import { Team } from '../team/team.model';
 import { emitBookingCreated, emitBookingUpdated } from '../../socket/socket';
+import { TeamAssignmentService } from '../teamAssignment/teamAssignment.service';
 
 export const calculateBookingPrice = async (payload: {
   serviceSlug?: string;
@@ -238,6 +240,14 @@ const getAllBookingsAdmin = async () => {
   const bookings = await Booking.find({ isDeleted: false })
     .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
     .populate('locationId')
     .sort({ createdAt: -1 });
 
@@ -246,7 +256,7 @@ const getAllBookingsAdmin = async () => {
 
 const updateBookingStatusAdmin = async (
   bookingId: string,
-  payload: { status?: string; cleanerTeam?: string },
+  payload: { status?: string; cleanerTeam?: string; teamId?: string },
 ) => {
   const booking = await Booking.findById(bookingId);
   if (!booking) {
@@ -256,14 +266,137 @@ const updateBookingStatusAdmin = async (
   if (payload.status) {
     booking.status = payload.status as any;
   }
-  if (payload.cleanerTeam !== undefined) {
+
+  if (payload.teamId && Types.ObjectId.isValid(payload.teamId)) {
+    const targetTeam = await Team.findById(payload.teamId);
+    if (targetTeam) {
+      if (targetTeam.leaderRequestStatus !== 'ACCEPTED' || targetTeam.status !== 'ACTIVE') {
+        throw new AppError(
+          400,
+          `Cannot assign service booking to '${targetTeam.teamName}'. Team Leader has not accepted invitation request yet!`,
+        );
+      }
+      booking.assignedTeam = targetTeam._id as any;
+      booking.cleanerTeam = `${targetTeam.teamName} (${targetTeam.teamCode})`;
+      await TeamAssignmentService.syncTeamAssignment(
+        booking._id.toString(),
+        targetTeam._id.toString(),
+      );
+    }
+  } else if (payload.cleanerTeam !== undefined) {
     booking.cleanerTeam = payload.cleanerTeam;
+    // Check if cleanerTeam string matches a teamId or teamCode
+    const foundTeam = await Team.findOne({
+      $or: [
+        { _id: Types.ObjectId.isValid(payload.cleanerTeam) ? payload.cleanerTeam : null },
+        { teamCode: payload.cleanerTeam },
+      ],
+    });
+    if (foundTeam) {
+      if (foundTeam.leaderRequestStatus !== 'ACCEPTED' || foundTeam.status !== 'ACTIVE') {
+        throw new AppError(
+          400,
+          `Cannot assign service booking to '${foundTeam.teamName}'. Team Leader has not accepted invitation request yet!`,
+        );
+      }
+      booking.assignedTeam = foundTeam._id as any;
+      booking.cleanerTeam = `${foundTeam.teamName} (${foundTeam.teamCode})`;
+      await TeamAssignmentService.syncTeamAssignment(
+        booking._id.toString(),
+        foundTeam._id.toString(),
+      );
+    }
   }
 
   await booking.save();
+
   const updatedDoc = await Booking.findById(booking._id)
     .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
+    .populate('locationId');
+
+  emitBookingUpdated(updatedDoc);
+
+  return updatedDoc;
+};
+
+const assignTeamToBookingAdmin = async (
+  bookingId: string,
+  payload: { teamId?: string; cleanerTeam?: string; notes?: string },
+) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking) {
+    throw new AppError(404, 'Booking not found!');
+  }
+
+  let targetTeam = null;
+  const lookupTerm = payload.teamId || payload.cleanerTeam;
+
+  if (lookupTerm) {
+    targetTeam = await Team.findOne({
+      $or: [
+        { _id: Types.ObjectId.isValid(lookupTerm) ? lookupTerm : null },
+        { teamCode: lookupTerm },
+        { teamName: lookupTerm },
+      ],
+    });
+  }
+
+  if (targetTeam) {
+    if (targetTeam.leaderRequestStatus !== 'ACCEPTED') {
+      throw new AppError(
+        400,
+        `Cannot assign service booking to '${targetTeam.teamName}'. Team Leader has not accepted the squad invitation request yet!`,
+      );
+    }
+    if (targetTeam.status !== 'ACTIVE') {
+      throw new AppError(
+        400,
+        `Cannot assign service booking to '${targetTeam.teamName}'. Team status is currently INACTIVE!`,
+      );
+    }
+    booking.assignedTeam = targetTeam._id as any;
+    booking.cleanerTeam = `${targetTeam.teamName} (${targetTeam.teamCode})`;
+    await TeamAssignmentService.syncTeamAssignment(
+      booking._id.toString(),
+      targetTeam._id.toString(),
+      undefined,
+      payload.notes || booking.notes,
+    );
+  } else if (payload.cleanerTeam) {
+    booking.cleanerTeam = payload.cleanerTeam;
+  }
+
+  if (payload.notes) {
+    booking.notes = payload.notes;
+  }
+
+  // Auto update status to CONFIRMED if currently PENDING
+  if (booking.status === 'PENDING') {
+    booking.status = 'CONFIRMED';
+  }
+
+  await booking.save();
+
+  const updatedDoc = await Booking.findById(booking._id)
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
     .populate('locationId');
 
   emitBookingUpdated(updatedDoc);
@@ -296,5 +429,6 @@ export const BookingService = {
   getSingleBooking,
   getAllBookingsAdmin,
   updateBookingStatusAdmin,
+  assignTeamToBookingAdmin,
   cancelBooking,
 };

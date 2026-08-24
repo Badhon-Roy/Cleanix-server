@@ -67,6 +67,10 @@ const bookingSchema = new Schema<IBooking>(
       type: String,
       default: 'Unassigned',
     },
+    assignedTeam: {
+      type: Schema.Types.ObjectId,
+      ref: 'Team',
+    },
     services: [bookingServiceItemSchema],
     addonsTotal: {
       type: Number,
