@@ -32,9 +32,9 @@ const teamSchema = new Schema<ITeam>(
       },
     ],
     zone: {
-      type: String,
-      required: [true, 'Coverage zone is required'],
-      trim: true,
+      type: Schema.Types.ObjectId,
+      ref: 'CoverageArea',
+      required: [true, 'Coverage zone ID is required'],
     },
     commissionRate: {
       type: Number,

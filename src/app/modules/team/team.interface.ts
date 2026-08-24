@@ -9,10 +9,10 @@ export interface ITeam {
   teamImage: string;
   leader: Types.ObjectId;
   members: Types.ObjectId[];
-  zone: string;
-  commissionRate: number; // default 10 (10% Team Leader Cut)
-  cleanerPoolShare: number; // default 40 (40% Cleaners Pool Share)
-  adminShare: number; // default 50 (50% Admin Net)
+  zone: Types.ObjectId;
+  commissionRate: number;
+  cleanerPoolShare: number; 
+  adminShare: number;
   status: TTeamStatus;
   isDeleted: boolean;
   createdAt?: Date;

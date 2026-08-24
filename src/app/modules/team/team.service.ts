@@ -28,6 +28,7 @@ const getAllTeamsFromDB = async (query: Record<string, unknown>) => {
   const teams = await Team.find(filter)
     .populate('leader', 'name email phone role status')
     .populate('members', 'name email phone role status')
+    .populate('zone', 'zoneName district areasIncluded')
     .sort({ createdAt: -1 });
 
   return teams;
@@ -36,7 +37,8 @@ const getAllTeamsFromDB = async (query: Record<string, unknown>) => {
 const getTeamByIdFromDB = async (id: string) => {
   const team = await Team.findById(id)
     .populate('leader', 'name email phone role status')
-    .populate('members', 'name email phone role status');
+    .populate('members', 'name email phone role status')
+    .populate('zone', 'zoneName district areasIncluded');
 
   if (!team || team.isDeleted) {
     throw new AppError(404, 'Team squad not found');
@@ -55,7 +57,8 @@ const updateTeamInDB = async (id: string, payload: Partial<ITeam>) => {
     runValidators: true,
   })
     .populate('leader', 'name email phone role status')
-    .populate('members', 'name email phone role status');
+    .populate('members', 'name email phone role status')
+    .populate('zone', 'zoneName district areasIncluded');
 
   // Automatically promote the assigned leader's role to 'TEAM_LEADER'
   if (payload.leader) {
