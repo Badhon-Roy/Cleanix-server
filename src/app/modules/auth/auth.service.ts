@@ -8,6 +8,7 @@ import { Admin } from '../admin/admin.model';
 import { EmailVerification } from './emailVerification.model';
 import otpGenerator from 'otp-generator';
 import { sendEmail, generateOTPEmailHTML } from '../../utils/sendEmail';
+import { emitCleanerUpdated } from '../../socket/socket';
 import {
   TChangePassword,
   TForgotPassword,
@@ -181,6 +182,10 @@ const registerUser = async (payload: TRegisterUser) => {
 
     await session.commitTransaction();
     await session.endSession();
+
+    if (payload.role === 'CLEANER') {
+      emitCleanerUpdated();
+    }
 
     // Clean up temporary email verification record
     await EmailVerification.deleteOne({ email: payload.email.toLowerCase() });
