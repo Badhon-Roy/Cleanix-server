@@ -3,6 +3,7 @@ import { ITeam } from './team.interface';
 import { Team } from './team.model';
 import { User } from '../user/user.model';
 import { Cleaner } from '../cleaner/cleaner.model';
+import { LeaderAppointmentService } from '../leaderAppointment/leaderAppointment.service';
 
 const createTeamInDB = async (payload: ITeam) => {
   const isTeamCodeExists = await Team.findOne({ teamCode: payload.teamCode, isDeleted: false });
@@ -70,6 +71,13 @@ const createTeamInDB = async (payload: ITeam) => {
 
   payload.leaderRequestStatus = 'PENDING';
   const team = await Team.create(payload);
+
+  if (team.leader) {
+    await LeaderAppointmentService.syncAppointmentOnTeamChange(
+      team._id.toString(),
+      team.leader.toString(),
+    );
+  }
 
   return team;
 };
@@ -186,6 +194,13 @@ const updateTeamInDB = async (id: string, payload: Partial<ITeam>) => {
     .populate('leader', 'name email phone role status')
     .populate('members', 'name email phone role status')
     .populate('zone', 'zoneName district areasIncluded');
+
+  if (updatedTeam && updatedTeam.leader && payload.leader) {
+    await LeaderAppointmentService.syncAppointmentOnTeamChange(
+      updatedTeam._id.toString(),
+      updatedTeam.leader._id ? updatedTeam.leader._id.toString() : updatedTeam.leader.toString(),
+    );
+  }
 
   return updatedTeam;
 };

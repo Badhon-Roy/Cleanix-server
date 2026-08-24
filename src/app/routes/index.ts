@@ -8,6 +8,7 @@ import { ServiceCategoryRoutes } from '../modules/servicecategory/servicecategor
 import { TeamRoutes } from '../modules/team/team.route';
 import { CleanerRoutes } from '../modules/cleaner/cleaner.route';
 import { CoverageRoutes } from '../modules/coverage/coverage.route';
+import { LeaderAppointmentRoutes } from '../modules/leaderAppointment/leaderAppointment.route';
 
 const router = Router();
 
@@ -47,6 +48,10 @@ const moduleRoutes = [
   {
     path: '/coverage',
     route: CoverageRoutes,
+  },
+  {
+    path: '/leader-appointments',
+    route: LeaderAppointmentRoutes,
   },
 ];
 

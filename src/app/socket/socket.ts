@@ -97,3 +97,9 @@ export const emitLeaderRequestUpdated = (data?: any) => {
     io.emit('leader_request_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitLeaderAppointmentUpdated = (data?: any) => {
+  if (io) {
+    io.emit('leader_appointment_updated', data || { timestamp: Date.now() });
+  }
+};

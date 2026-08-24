@@ -2,13 +2,19 @@ import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { TeamService } from './team.service';
-import { emitTeamUpdated, emitCleanerUpdated, emitLeaderRequestUpdated } from '../../socket/socket';
+import {
+  emitTeamUpdated,
+  emitCleanerUpdated,
+  emitLeaderRequestUpdated,
+  emitLeaderAppointmentUpdated,
+} from '../../socket/socket';
 
 const createTeam = catchAsync(async (req: Request, res: Response) => {
   const result = await TeamService.createTeamInDB(req.body);
 
   emitTeamUpdated(result);
   emitLeaderRequestUpdated(result);
+  emitLeaderAppointmentUpdated(result);
 
   sendResponse(res, {
     statusCode: 201,
@@ -47,6 +53,7 @@ const updateTeam = catchAsync(async (req: Request, res: Response) => {
 
   emitTeamUpdated(result);
   emitLeaderRequestUpdated(result);
+  emitLeaderAppointmentUpdated(result);
 
   sendResponse(res, {
     statusCode: 200,
