@@ -26,6 +26,12 @@ const getAllAddonsAdmin = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createAddon = catchAsync(async (req: Request, res: Response) => {
+  if (req.file) {
+    const mime = req.file.mimetype;
+    const base64 = req.file.buffer.toString('base64');
+    req.body.iconImage = `data:${mime};base64,${base64}`;
+  }
+
   const result = await AddonService.createAddon(req.body);
 
   sendResponse(res, {
@@ -37,6 +43,12 @@ const createAddon = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateAddon = catchAsync(async (req: Request, res: Response) => {
+  if (req.file) {
+    const mime = req.file.mimetype;
+    const base64 = req.file.buffer.toString('base64');
+    req.body.iconImage = `data:${mime};base64,${base64}`;
+  }
+
   const addonId = req.params.addonId as string;
   const result = await AddonService.updateAddon(addonId, req.body);
 

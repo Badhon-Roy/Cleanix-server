@@ -4,7 +4,7 @@ export interface IAddon {
   subLabel: string;
   price: number;
   tag?: string;
-  iconName?: string;
+  iconImage?: string;
   active: boolean;
   isDeleted?: boolean;
 }

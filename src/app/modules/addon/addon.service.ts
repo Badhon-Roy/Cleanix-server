@@ -31,7 +31,7 @@ const createAddon = async (payload: Partial<IAddon>) => {
     subLabel: payload.subLabel || 'সার্ভিস সাব-লেবেল',
     price: payload.price,
     tag: payload.tag || 'SPECIALIST',
-    iconName: payload.iconName || 'sparkles',
+    iconImage: payload.iconImage,
     active: payload.active !== undefined ? payload.active : true,
   });
 

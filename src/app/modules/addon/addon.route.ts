@@ -1,5 +1,6 @@
 import express from 'express';
 import auth from '../../middlewares/auth';
+import { upload, parseBodyData } from '../../middlewares/multer';
 import { AddonController } from './addon.controller';
 
 const router = express.Router();
@@ -9,8 +10,20 @@ router.get('/', AddonController.getActiveAddons);
 
 // Admin endpoints
 router.get('/admin', auth('ADMIN', 'CUSTOMER'), AddonController.getAllAddonsAdmin);
-router.post('/', auth('ADMIN', 'CUSTOMER'), AddonController.createAddon);
-router.patch('/:addonId', auth('ADMIN', 'CUSTOMER'), AddonController.updateAddon);
+router.post(
+  '/',
+  auth('ADMIN', 'CUSTOMER'),
+  upload.single('iconImage'),
+  parseBodyData,
+  AddonController.createAddon,
+);
+router.patch(
+  '/:addonId',
+  auth('ADMIN', 'CUSTOMER'),
+  upload.single('iconImage'),
+  parseBodyData,
+  AddonController.updateAddon,
+);
 router.delete('/:addonId', auth('ADMIN', 'CUSTOMER'), AddonController.deleteAddon);
 
 export const AddonRoutes = router;

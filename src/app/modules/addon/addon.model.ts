@@ -24,9 +24,8 @@ const addonSchema = new Schema<IAddon>(
       type: String,
       default: 'ADD-ON',
     },
-    iconName: {
+    iconImage: {
       type: String,
-      default: 'sparkles',
     },
     active: {
       type: Boolean,
