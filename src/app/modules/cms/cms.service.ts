@@ -6,6 +6,7 @@ import {
   IProjectsCMSContent,
   IPricingCMSContent,
   ICoverageCMSContent,
+  IContactCMSContent,
 } from './cms.interface';
 
 const defaultHomeCMSContent: IHomeCMSContent = {
@@ -520,6 +521,57 @@ const updateCoverageCMSInDB = async (
   };
 };
 
+export const defaultContactCMSContent: IContactCMSContent = {
+  heroBadge: "24/7 CUSTOMER SUPPORT & QUOTE REQUEST",
+  heroTitleLine1: "GET IN TOUCH WITH",
+  heroTitleHighlight: "OUR TEAM",
+  heroSubtitle:
+    "আপনার বাসা বা কর্পোরেট স্পেস পরিষ্কারের জন্য যেকোনো প্রশ্ন, ফ্রি কোটেশন বা ইনস্ট্যান্ট শিডিউল বুকিংয়ের জন্য আমাদের এক্সপার্ট টিমের সাথে যোগাযোগ করুন।",
+  heroImage:
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+
+  formBadge: "CONTACT REQUEST",
+  formTitleLine1: "READY TO SHIP",
+  formTitleLine2: "SMARTER",
+  formTitleHighlight: "CONTACT",
+  formTitleLine3: "OUR TEAM",
+  formCleanerImage:
+    "https://framerusercontent.com/images/sooGLoQVstKUc2PnwKtqQNMI.png?width=588&height=630",
+
+  locationTitle: "Location",
+  locationText: "House 42, Road 11, Block D, Gulshan 2\nDhaka-1212, Bangladesh",
+  supportTitle: "Support Clients",
+  supportText: "+880 1774-500815\n+880 1894-654254",
+  hoursTitle: "Opening Hours",
+  hoursText: "Saturday - Thursday\n09 : 00 AM - 10 : 30 PM",
+};
+
+const getContactCMSFromDB = async (): Promise<IContactCMSContent> => {
+  const record = await CMS.findOne({ page: 'contact' });
+  if (!record || !record.content) {
+    return defaultContactCMSContent;
+  }
+  return { ...defaultContactCMSContent, ...(record.content as IContactCMSContent) };
+};
+
+const updateContactCMSInDB = async (
+  payload: Partial<IContactCMSContent>,
+): Promise<{ fullContent: IContactCMSContent; updatedFields: Partial<IContactCMSContent> }> => {
+  const current = await getContactCMSFromDB();
+  const updatedContent = { ...current, ...payload };
+
+  const result = await CMS.findOneAndUpdate(
+    { page: 'contact' },
+    { page: 'contact', content: updatedContent },
+    { new: true, upsert: true },
+  );
+
+  return {
+    fullContent: result.content as IContactCMSContent,
+    updatedFields: payload,
+  };
+};
+
 export const CMSService = {
   getHomeCMSFromDB,
   updateHomeCMSInDB,
@@ -533,4 +585,6 @@ export const CMSService = {
   updatePricingCMSInDB,
   getCoverageCMSFromDB,
   updateCoverageCMSInDB,
+  getContactCMSFromDB,
+  updateContactCMSInDB,
 };

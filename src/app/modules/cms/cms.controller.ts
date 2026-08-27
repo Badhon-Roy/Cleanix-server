@@ -148,6 +148,30 @@ const updateCoverageCMS = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getContactCMS = catchAsync(async (req: Request, res: Response) => {
+  const result = await CMSService.getContactCMSFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Contact Page CMS content retrieved successfully!',
+    data: result,
+  });
+});
+
+const updateContactCMS = catchAsync(async (req: Request, res: Response) => {
+  const { fullContent, updatedFields } = await CMSService.updateContactCMSInDB(req.body);
+
+  emitCMSUpdated({ page: 'contact', updatedFields, data: fullContent });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Contact Page CMS content updated successfully live!',
+    data: fullContent,
+  });
+});
+
 export const CMSController = {
   getHomeCMS,
   updateHomeCMS,
@@ -161,4 +185,6 @@ export const CMSController = {
   updatePricingCMS,
   getCoverageCMS,
   updateCoverageCMS,
+  getContactCMS,
+  updateContactCMS,
 };

@@ -233,9 +233,31 @@ export interface ICoverageCMSContent {
   sectionSubtitle: string;
 }
 
+export interface IContactCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroSubtitle: string;
+  heroImage: string;
+
+  formBadge: string;
+  formTitleLine1: string;
+  formTitleLine2: string;
+  formTitleHighlight: string;
+  formTitleLine3: string;
+  formCleanerImage: string;
+
+  locationTitle: string;
+  locationText: string;
+  supportTitle: string;
+  supportText: string;
+  hoursTitle: string;
+  hoursText: string;
+}
+
 export interface ICMS {
   _id?: string;
-  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', 'coverage', etc.
+  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', 'coverage', 'contact', etc.
   content:
     | IHomeCMSContent
     | IAboutCMSContent
@@ -243,6 +265,7 @@ export interface ICMS {
     | IProjectsCMSContent
     | IPricingCMSContent
     | ICoverageCMSContent
+    | IContactCMSContent
     | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;

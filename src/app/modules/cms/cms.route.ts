@@ -27,4 +27,8 @@ router.get('/coverage', CMSController.getCoverageCMS);
 router.patch('/coverage', CMSController.updateCoverageCMS);
 router.put('/coverage', CMSController.updateCoverageCMS);
 
+router.get('/contact', CMSController.getContactCMS);
+router.patch('/contact', CMSController.updateContactCMS);
+router.put('/contact', CMSController.updateContactCMS);
+
 export const CMSRoutes = router;
