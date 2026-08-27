@@ -28,7 +28,33 @@ const updateHomeCMS = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAboutCMS = catchAsync(async (req: Request, res: Response) => {
+  const result = await CMSService.getAboutCMSFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'About Us Page CMS content retrieved successfully!',
+    data: result,
+  });
+});
+
+const updateAboutCMS = catchAsync(async (req: Request, res: Response) => {
+  const { fullContent, updatedFields } = await CMSService.updateAboutCMSInDB(req.body);
+
+  emitCMSUpdated({ page: 'about', updatedFields, data: fullContent });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'About Us Page CMS content updated successfully live!',
+    data: fullContent,
+  });
+});
+
 export const CMSController = {
   getHomeCMS,
   updateHomeCMS,
+  getAboutCMS,
+  updateAboutCMS,
 };

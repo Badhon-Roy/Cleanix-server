@@ -72,10 +72,83 @@ export interface IHomeCMSContent {
   faqItems: IFaqItem[];
 }
 
+export interface ITeamMemberItem {
+  id: string;
+  name: string;
+  role: string;
+  image: string;
+  nidVerified: boolean;
+  bio: string;
+}
+
+export interface IJourneyStepItem {
+  id: string;
+  number: string;
+  year: string;
+  side: "left" | "right";
+  title: string;
+  desc: string;
+}
+
+export interface IAboutCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroSubtitle: string;
+  heroImage: string;
+
+  overviewBadge: string;
+  overviewTitle1: string;
+  overviewTitleHighlight: string;
+  overviewDesc: string;
+  overviewLeftImage: string;
+  overviewRightImage: string;
+
+  stat1Count: string;
+  stat1Label: string;
+  stat2Count: string;
+  stat2Label: string;
+  stat3Count: string;
+  stat3Label: string;
+
+  whoWeAreBadge: string;
+  whoWeAreTitle: string;
+  whoWeAreHighlight: string;
+  whoWeAreFeatureImage: string;
+  whoWeAreExpYears: string;
+  whoWeAreExpLabel: string;
+  whoWeAreClientsCount: string;
+  whoWeAreRatingScore: string;
+  whoWeAreSubheading: string;
+  whoWeArePara1: string;
+  whoWeArePara2: string;
+  whoWeAreCheck1: string;
+  whoWeAreCheck2: string;
+  whoWeAreCheck3: string;
+  whoWeAreCheck4: string;
+
+  teamMembers: ITeamMemberItem[];
+
+  ctaBannerImage: string;
+  ctaBadgeText: string;
+  ctaTitle: string;
+  ctaCheck1: string;
+  ctaCheck2: string;
+  ctaCheck3: string;
+  ctaChecks: string[];
+  ctaButtonText: string;
+  ctaButtonLink: string;
+
+  journeyBadge: string;
+  journeyTitle: string;
+  journeyHighlight: string;
+  journeySteps: IJourneyStepItem[];
+}
+
 export interface ICMS {
   _id?: string;
   page: string; // e.g. 'home', 'about', etc.
-  content: IHomeCMSContent | Record<string, any>;
+  content: IHomeCMSContent | IAboutCMSContent | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }
