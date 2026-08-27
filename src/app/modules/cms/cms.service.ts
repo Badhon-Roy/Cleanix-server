@@ -4,6 +4,7 @@ import {
   IAboutCMSContent,
   IServicesCMSContent,
   IProjectsCMSContent,
+  IPricingCMSContent,
 } from './cms.interface';
 
 const defaultHomeCMSContent: IHomeCMSContent = {
@@ -433,6 +434,47 @@ const updateProjectsCMSInDB = async (
   };
 };
 
+export const defaultPricingCMSContent: IPricingCMSContent = {
+  heroBadge: "TRANSPARENT SAAS PRICING & ESTIMATE",
+  heroTitleLine1: "AFFORDABLE & FLEXIBLE",
+  heroTitleHighlight: "PRICING",
+  heroTitleLine2: "PLANS",
+  heroSubtitle:
+    "আবাসিক বাসা, কমার্শিয়াল অফিস ও স্থানান্তরিত স্পেসের জন্য স্বচ্ছ সাবস্ক্রিপশন প্যাকেজ অথবা ডাইনামিক লাইভ ক্যালকুলেটর থেকে তাৎক্ষণিক বাজেট বের করুন।",
+  heroImage:
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+
+  sectionBadge: "PRICING",
+  sectionTitle: "FLEXIBLE PRICING PLANS CLEANING SERVICES",
+  sectionAssetImage: "/cleaning-bucket.png",
+};
+
+const getPricingCMSFromDB = async (): Promise<IPricingCMSContent> => {
+  const record = await CMS.findOne({ page: 'pricing' });
+  if (!record || !record.content) {
+    return defaultPricingCMSContent;
+  }
+  return { ...defaultPricingCMSContent, ...(record.content as IPricingCMSContent) };
+};
+
+const updatePricingCMSInDB = async (
+  payload: Partial<IPricingCMSContent>,
+): Promise<{ fullContent: IPricingCMSContent; updatedFields: Partial<IPricingCMSContent> }> => {
+  const current = await getPricingCMSFromDB();
+  const updatedContent = { ...current, ...payload };
+
+  const result = await CMS.findOneAndUpdate(
+    { page: 'pricing' },
+    { page: 'pricing', content: updatedContent },
+    { new: true, upsert: true },
+  );
+
+  return {
+    fullContent: result.content as IPricingCMSContent,
+    updatedFields: payload,
+  };
+};
+
 export const CMSService = {
   getHomeCMSFromDB,
   updateHomeCMSInDB,
@@ -442,4 +484,6 @@ export const CMSService = {
   updateServicesCMSInDB,
   getProjectsCMSFromDB,
   updateProjectsCMSInDB,
+  getPricingCMSFromDB,
+  updatePricingCMSInDB,
 };

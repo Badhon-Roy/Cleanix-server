@@ -205,14 +205,28 @@ export interface IProjectsCMSContent {
   overviewChecks: string[];
 }
 
+export interface IPricingCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroTitleLine2: string;
+  heroSubtitle: string;
+  heroImage: string;
+
+  sectionBadge: string;
+  sectionTitle: string;
+  sectionAssetImage: string;
+}
+
 export interface ICMS {
   _id?: string;
-  page: string; // e.g. 'home', 'about', 'services', 'projects', etc.
+  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', etc.
   content:
     | IHomeCMSContent
     | IAboutCMSContent
     | IServicesCMSContent
     | IProjectsCMSContent
+    | IPricingCMSContent
     | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
