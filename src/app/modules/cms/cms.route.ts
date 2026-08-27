@@ -15,4 +15,8 @@ router.get('/services', CMSController.getServicesCMS);
 router.patch('/services', CMSController.updateServicesCMS);
 router.put('/services', CMSController.updateServicesCMS);
 
+router.get('/projects', CMSController.getProjectsCMS);
+router.patch('/projects', CMSController.updateProjectsCMS);
+router.put('/projects', CMSController.updateProjectsCMS);
+
 export const CMSRoutes = router;

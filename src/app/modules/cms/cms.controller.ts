@@ -76,6 +76,30 @@ const updateServicesCMS = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getProjectsCMS = catchAsync(async (req: Request, res: Response) => {
+  const result = await CMSService.getProjectsCMSFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Projects Page CMS content retrieved successfully!',
+    data: result,
+  });
+});
+
+const updateProjectsCMS = catchAsync(async (req: Request, res: Response) => {
+  const { fullContent, updatedFields } = await CMSService.updateProjectsCMSInDB(req.body);
+
+  emitCMSUpdated({ page: 'projects', updatedFields, data: fullContent });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Projects Page CMS content updated successfully live!',
+    data: fullContent,
+  });
+});
+
 export const CMSController = {
   getHomeCMS,
   updateHomeCMS,
@@ -83,4 +107,6 @@ export const CMSController = {
   updateAboutCMS,
   getServicesCMS,
   updateServicesCMS,
+  getProjectsCMS,
+  updateProjectsCMS,
 };

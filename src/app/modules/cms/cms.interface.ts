@@ -187,10 +187,33 @@ export interface IServicesCMSContent {
   howItWorksSteps: IHowItWorksStepItem[];
 }
 
+export interface IProjectsCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroTitleLine2: string;
+  heroSubtitle: string;
+  heroImage: string;
+
+  overviewBadge: string;
+  overviewTitleLine1: string;
+  overviewTitleLine2: string;
+  overviewTitleHighlight: string;
+  overviewTitleLine3: string;
+  overviewFeatureImage: string;
+  overviewDesc: string;
+  overviewChecks: string[];
+}
+
 export interface ICMS {
   _id?: string;
-  page: string; // e.g. 'home', 'about', 'services', etc.
-  content: IHomeCMSContent | IAboutCMSContent | IServicesCMSContent | Record<string, any>;
+  page: string; // e.g. 'home', 'about', 'services', 'projects', etc.
+  content:
+    | IHomeCMSContent
+    | IAboutCMSContent
+    | IServicesCMSContent
+    | IProjectsCMSContent
+    | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }
