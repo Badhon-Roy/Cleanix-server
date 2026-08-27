@@ -5,6 +5,7 @@ import {
   IServicesCMSContent,
   IProjectsCMSContent,
   IPricingCMSContent,
+  ICoverageCMSContent,
 } from './cms.interface';
 
 const defaultHomeCMSContent: IHomeCMSContent = {
@@ -475,6 +476,50 @@ const updatePricingCMSInDB = async (
   };
 };
 
+export const defaultCoverageCMSContent: ICoverageCMSContent = {
+  heroBadge: "24/7 ACTIVE GPS FLEET COVERAGE",
+  heroTitleLine1: "DHAKA CITY",
+  heroTitleHighlight: "COVERAGE AREA",
+  heroTitleLine2: "MAP",
+  heroSubtitle:
+    "ঢাকার ১০টি প্রধান এলাকায় আমাদের এনআইডি-ভেরিফাইড ক্লিনার বহর জরুরি ২৫-৩০ মিনিটের মধ্যে পৌঁছে যায়। আপনার এলাকা নির্বাচন করে সার্ভিস স্পট বুক করুন।",
+  heroImage:
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+
+  sectionBadge: "COVERAGE AREA MAP",
+  sectionTitleLine1: "PROUDLY SERVING ALL MAJOR",
+  sectionTitleHighlight: "NEIGHBORHOODS",
+  sectionTitleLine2: "IN DHAKA",
+  sectionSubtitle:
+    "আমাদের জিপিএস ট্র্যাকিংকৃত ক্লিনার বহর ঢাকার প্রতিটি প্রধান এলাকায় জরুরি ২৫-৩০ মিনিটের মধ্যে পৌঁছে যায়।",
+};
+
+const getCoverageCMSFromDB = async (): Promise<ICoverageCMSContent> => {
+  const record = await CMS.findOne({ page: 'coverage' });
+  if (!record || !record.content) {
+    return defaultCoverageCMSContent;
+  }
+  return { ...defaultCoverageCMSContent, ...(record.content as ICoverageCMSContent) };
+};
+
+const updateCoverageCMSInDB = async (
+  payload: Partial<ICoverageCMSContent>,
+): Promise<{ fullContent: ICoverageCMSContent; updatedFields: Partial<ICoverageCMSContent> }> => {
+  const current = await getCoverageCMSFromDB();
+  const updatedContent = { ...current, ...payload };
+
+  const result = await CMS.findOneAndUpdate(
+    { page: 'coverage' },
+    { page: 'coverage', content: updatedContent },
+    { new: true, upsert: true },
+  );
+
+  return {
+    fullContent: result.content as ICoverageCMSContent,
+    updatedFields: payload,
+  };
+};
+
 export const CMSService = {
   getHomeCMSFromDB,
   updateHomeCMSInDB,
@@ -486,4 +531,6 @@ export const CMSService = {
   updateProjectsCMSInDB,
   getPricingCMSFromDB,
   updatePricingCMSInDB,
+  getCoverageCMSFromDB,
+  updateCoverageCMSInDB,
 };

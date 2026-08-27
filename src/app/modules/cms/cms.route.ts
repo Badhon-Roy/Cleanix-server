@@ -23,4 +23,8 @@ router.get('/pricing', CMSController.getPricingCMS);
 router.patch('/pricing', CMSController.updatePricingCMS);
 router.put('/pricing', CMSController.updatePricingCMS);
 
+router.get('/coverage', CMSController.getCoverageCMS);
+router.patch('/coverage', CMSController.updateCoverageCMS);
+router.put('/coverage', CMSController.updateCoverageCMS);
+
 export const CMSRoutes = router;

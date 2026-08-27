@@ -124,6 +124,30 @@ const updatePricingCMS = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCoverageCMS = catchAsync(async (req: Request, res: Response) => {
+  const result = await CMSService.getCoverageCMSFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Coverage Page CMS content retrieved successfully!',
+    data: result,
+  });
+});
+
+const updateCoverageCMS = catchAsync(async (req: Request, res: Response) => {
+  const { fullContent, updatedFields } = await CMSService.updateCoverageCMSInDB(req.body);
+
+  emitCMSUpdated({ page: 'coverage', updatedFields, data: fullContent });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Coverage Page CMS content updated successfully live!',
+    data: fullContent,
+  });
+});
+
 export const CMSController = {
   getHomeCMS,
   updateHomeCMS,
@@ -135,4 +159,6 @@ export const CMSController = {
   updateProjectsCMS,
   getPricingCMS,
   updatePricingCMS,
+  getCoverageCMS,
+  updateCoverageCMS,
 };

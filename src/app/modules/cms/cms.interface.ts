@@ -218,15 +218,31 @@ export interface IPricingCMSContent {
   sectionAssetImage: string;
 }
 
+export interface ICoverageCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroTitleLine2: string;
+  heroSubtitle: string;
+  heroImage: string;
+
+  sectionBadge: string;
+  sectionTitleLine1: string;
+  sectionTitleHighlight: string;
+  sectionTitleLine2: string;
+  sectionSubtitle: string;
+}
+
 export interface ICMS {
   _id?: string;
-  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', etc.
+  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', 'coverage', etc.
   content:
     | IHomeCMSContent
     | IAboutCMSContent
     | IServicesCMSContent
     | IProjectsCMSContent
     | IPricingCMSContent
+    | ICoverageCMSContent
     | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
