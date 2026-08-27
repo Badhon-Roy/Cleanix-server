@@ -19,7 +19,7 @@ const blogSchema = new Schema<IBlog>(
     date: { type: String, required: true },
     author: { type: blogAuthorSchema, required: true },
     image: { type: String, required: true },
-    shortDesc: { type: String, required: true },
+    shortDesc: { type: String, default: '' },
     introParagraph: { type: String, required: true },
     sections: [blogSectionSchema],
   },
