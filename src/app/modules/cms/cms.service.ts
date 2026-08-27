@@ -7,6 +7,7 @@ import {
   IPricingCMSContent,
   ICoverageCMSContent,
   IContactCMSContent,
+  IBlogCMSContent,
 } from './cms.interface';
 
 const defaultHomeCMSContent: IHomeCMSContent = {
@@ -572,6 +573,43 @@ const updateContactCMSInDB = async (
   };
 };
 
+export const defaultBlogCMSContent: IBlogCMSContent = {
+  heroBadge: "CLEANING INSIGHTS & EXPERT TIPS",
+  heroTitleLine1: "EXPLORE OUR LATEST",
+  heroTitleHighlight: "ARTICLES",
+  heroTitleLine2: "& NEWS",
+  heroSubtitle:
+    "বাসা ও অফিস পরিষ্কার রাখা, ইনডোর এয়ার কোয়ালিটি বাড়ানো এবং মুভ-আউট ডিপ ক্লিনিং গাইড সম্পর্কিত আমাদের এক্সপার্ট আর্টিকেলসমূহ পড়ুন।",
+  heroImage:
+    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+};
+
+const getBlogCMSFromDB = async (): Promise<IBlogCMSContent> => {
+  const record = await CMS.findOne({ page: 'blog' });
+  if (!record || !record.content) {
+    return defaultBlogCMSContent;
+  }
+  return { ...defaultBlogCMSContent, ...(record.content as IBlogCMSContent) };
+};
+
+const updateBlogCMSInDB = async (
+  payload: Partial<IBlogCMSContent>,
+): Promise<{ fullContent: IBlogCMSContent; updatedFields: Partial<IBlogCMSContent> }> => {
+  const current = await getBlogCMSFromDB();
+  const updatedContent = { ...current, ...payload };
+
+  const result = await CMS.findOneAndUpdate(
+    { page: 'blog' },
+    { page: 'blog', content: updatedContent },
+    { new: true, upsert: true },
+  );
+
+  return {
+    fullContent: result.content as IBlogCMSContent,
+    updatedFields: payload,
+  };
+};
+
 export const CMSService = {
   getHomeCMSFromDB,
   updateHomeCMSInDB,
@@ -587,4 +625,6 @@ export const CMSService = {
   updateCoverageCMSInDB,
   getContactCMSFromDB,
   updateContactCMSInDB,
+  getBlogCMSFromDB,
+  updateBlogCMSInDB,
 };

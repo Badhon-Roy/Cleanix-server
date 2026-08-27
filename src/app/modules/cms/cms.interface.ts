@@ -255,9 +255,18 @@ export interface IContactCMSContent {
   hoursText: string;
 }
 
+export interface IBlogCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight: string;
+  heroTitleLine2: string;
+  heroSubtitle: string;
+  heroImage: string;
+}
+
 export interface ICMS {
   _id?: string;
-  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', 'coverage', 'contact', etc.
+  page: string; // e.g. 'home', 'about', 'services', 'projects', 'pricing', 'coverage', 'contact', 'blog', etc.
   content:
     | IHomeCMSContent
     | IAboutCMSContent
@@ -266,6 +275,7 @@ export interface ICMS {
     | IPricingCMSContent
     | ICoverageCMSContent
     | IContactCMSContent
+    | IBlogCMSContent
     | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;

@@ -31,4 +31,8 @@ router.get('/contact', CMSController.getContactCMS);
 router.patch('/contact', CMSController.updateContactCMS);
 router.put('/contact', CMSController.updateContactCMS);
 
+router.get('/blog', CMSController.getBlogCMS);
+router.patch('/blog', CMSController.updateBlogCMS);
+router.put('/blog', CMSController.updateBlogCMS);
+
 export const CMSRoutes = router;

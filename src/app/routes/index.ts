@@ -11,6 +11,7 @@ import { CoverageRoutes } from '../modules/coverage/coverage.route';
 import { LeaderAppointmentRoutes } from '../modules/leaderAppointment/leaderAppointment.route';
 import { TeamAssignmentRoutes } from '../modules/teamAssignment/teamAssignment.route';
 import { CMSRoutes } from '../modules/cms/cms.route';
+import { BlogRoutes } from '../modules/blog/blog.route';
 
 const router = Router();
 
@@ -62,6 +63,10 @@ const moduleRoutes = [
   {
     path: '/cms',
     route: CMSRoutes,
+  },
+  {
+    path: '/blogs',
+    route: BlogRoutes,
   },
 ];
 

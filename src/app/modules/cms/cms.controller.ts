@@ -172,6 +172,30 @@ const updateContactCMS = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getBlogCMS = catchAsync(async (req: Request, res: Response) => {
+  const result = await CMSService.getBlogCMSFromDB();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Blog Page CMS content retrieved successfully!',
+    data: result,
+  });
+});
+
+const updateBlogCMS = catchAsync(async (req: Request, res: Response) => {
+  const { fullContent, updatedFields } = await CMSService.updateBlogCMSInDB(req.body);
+
+  emitCMSUpdated({ page: 'blog', updatedFields, data: fullContent });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Blog Page CMS content updated successfully live!',
+    data: fullContent,
+  });
+});
+
 export const CMSController = {
   getHomeCMS,
   updateHomeCMS,
@@ -187,4 +211,6 @@ export const CMSController = {
   updateCoverageCMS,
   getContactCMS,
   updateContactCMS,
+  getBlogCMS,
+  updateBlogCMS,
 };
