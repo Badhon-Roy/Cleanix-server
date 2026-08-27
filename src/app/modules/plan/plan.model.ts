@@ -52,6 +52,10 @@ const PlanSchema = new Schema<IPlan>(
       default: '',
       trim: true,
     },
+    isAddonFree: {
+      type: Boolean,
+      default: false,
+    },
     ctaText: {
       type: String,
       default: 'Select Plan',
