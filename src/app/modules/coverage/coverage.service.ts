@@ -21,10 +21,33 @@ const createCoverageInDB = async (payload: ICoverageArea) => {
 const getAllCoveragesFromDB = async (query: Record<string, unknown>) => {
   const filter: Record<string, unknown> = { isDeleted: false };
 
-  if (query.district) filter.district = query.district;
-  if (query.isActive !== undefined) filter.isActive = query.isActive === 'true';
+  // SearchTerm / Query filtering across zoneName, desc, district, areasIncluded, zipCodes
+  const searchTerm = (query.searchTerm || query.query || query.search) as string;
+  if (searchTerm && searchTerm.trim() !== '') {
+    const regex = new RegExp(searchTerm.trim(), 'i');
+    filter.$or = [
+      { zoneName: regex },
+      { desc: regex },
+      { district: regex },
+      { areasIncluded: regex },
+      { zipCodes: regex },
+    ];
+  }
 
-  const result = await CoverageArea.find(filter).sort({ createdAt: -1 });
+  if (query.district && query.district !== 'ALL') {
+    filter.district = { $regex: query.district as string, $options: 'i' };
+  }
+
+  if (query.isActive !== undefined && query.isActive !== '') {
+    filter.isActive = query.isActive === 'true';
+  }
+
+  // Sorting
+  const sortBy = (query.sortBy as string) || 'createdAt';
+  const sortOrder = query.sortOrder === 'desc' || query.sortOrder === '-1' ? -1 : 1;
+  const sortCondition: Record<string, 1 | -1> = { [sortBy]: sortOrder };
+
+  const result = await CoverageArea.find(filter).sort(sortCondition);
   return result;
 };
 
