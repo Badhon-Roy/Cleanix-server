@@ -145,10 +145,52 @@ export interface IAboutCMSContent {
   journeySteps: IJourneyStepItem[];
 }
 
+export interface IHowItWorksStepItem {
+  id: string;
+  step: string;
+  title: string;
+  description: string;
+  image: string;
+}
+
+export interface IServicesCMSContent {
+  heroBadge: string;
+  heroTitleLine1: string;
+  heroTitleHighlight1: string;
+  heroTitleMiddle: string;
+  heroTitleHighlight2: string;
+  heroSubtitle: string;
+  heroImage: string;
+
+  overviewBadge: string;
+  overviewTitle1: string;
+  overviewTitleHighlight: string;
+  overviewTitle2: string;
+  overviewDesc: string;
+  overviewFeatureImage: string;
+
+  card1Title: string;
+  card1Checks: string[];
+
+  card2Title: string;
+  card2Checks: string[];
+
+  coreBadge: string;
+  coreTitleLine1: string;
+  coreTitleHighlight: string;
+  coreTitleLine2: string;
+
+  howItWorksBadge: string;
+  howItWorksTitle: string;
+  howItWorksHighlight: string;
+  howItWorksRightDesc: string;
+  howItWorksSteps: IHowItWorksStepItem[];
+}
+
 export interface ICMS {
   _id?: string;
-  page: string; // e.g. 'home', 'about', etc.
-  content: IHomeCMSContent | IAboutCMSContent | Record<string, any>;
+  page: string; // e.g. 'home', 'about', 'services', etc.
+  content: IHomeCMSContent | IAboutCMSContent | IServicesCMSContent | Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }
