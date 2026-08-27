@@ -110,3 +110,16 @@ export const emitCMSUpdated = (data?: any) => {
   }
 };
 
+export const emitContactCreated = (data?: any) => {
+  if (io) {
+    io.emit('contact_created', data || { timestamp: Date.now() });
+  }
+};
+
+export const emitContactUpdated = (data?: any) => {
+  if (io) {
+    io.emit('contact_updated', data || { timestamp: Date.now() });
+  }
+};
+
+

@@ -13,6 +13,7 @@ import { TeamAssignmentRoutes } from '../modules/teamAssignment/teamAssignment.r
 import { CMSRoutes } from '../modules/cms/cms.route';
 import { BlogRoutes } from '../modules/blog/blog.route';
 import { ProjectRoutes } from '../modules/project/project.route';
+import { ContactRoutes } from '../modules/contact/contact.route';
 
 const router = Router();
 
@@ -72,6 +73,10 @@ const moduleRoutes = [
   {
     path: '/projects',
     route: ProjectRoutes,
+  },
+  {
+    path: '/contacts',
+    route: ContactRoutes,
   },
 ];
 
