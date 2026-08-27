@@ -15,6 +15,7 @@ import { BlogRoutes } from '../modules/blog/blog.route';
 import { ProjectRoutes } from '../modules/project/project.route';
 import { ContactRoutes } from '../modules/contact/contact.route';
 import { PlanRoutes } from '../modules/plan/plan.route';
+import { GalleryRoutes } from '../modules/gallery/gallery.route';
 
 const router = Router();
 
@@ -82,6 +83,10 @@ const moduleRoutes = [
   {
     path: '/plans',
     route: PlanRoutes,
+  },
+  {
+    path: '/gallery',
+    route: GalleryRoutes,
   },
 ];
 

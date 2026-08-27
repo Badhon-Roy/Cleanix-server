@@ -128,4 +128,10 @@ export const emitPlanUpdated = (data?: any) => {
   }
 };
 
+export const emitGalleryUpdated = (data?: any) => {
+  if (io) {
+    io.emit('gallery_updated', data || { timestamp: Date.now() });
+  }
+};
+
 

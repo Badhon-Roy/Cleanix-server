@@ -8,7 +8,8 @@ type TResponse<T> = {
     page: number;
     limit: number;
     total: number;
-    totalPage: number;
+    totalPage?: number;
+    hasMore?: boolean;
   };
   data: T;
 };
