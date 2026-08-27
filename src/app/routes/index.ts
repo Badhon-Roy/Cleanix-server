@@ -14,6 +14,7 @@ import { CMSRoutes } from '../modules/cms/cms.route';
 import { BlogRoutes } from '../modules/blog/blog.route';
 import { ProjectRoutes } from '../modules/project/project.route';
 import { ContactRoutes } from '../modules/contact/contact.route';
+import { PlanRoutes } from '../modules/plan/plan.route';
 
 const router = Router();
 
@@ -77,6 +78,10 @@ const moduleRoutes = [
   {
     path: '/contacts',
     route: ContactRoutes,
+  },
+  {
+    path: '/plans',
+    route: PlanRoutes,
   },
 ];
 

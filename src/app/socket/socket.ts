@@ -122,4 +122,10 @@ export const emitContactUpdated = (data?: any) => {
   }
 };
 
+export const emitPlanUpdated = (data?: any) => {
+  if (io) {
+    io.emit('plan_updated', data || { timestamp: Date.now() });
+  }
+};
+
 
