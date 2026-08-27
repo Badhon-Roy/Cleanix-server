@@ -8,7 +8,7 @@ const blogSectionSchema = new Schema({
 
 const blogAuthorSchema = new Schema({
   name: { type: String, required: true },
-  avatar: { type: String, required: true },
+  avatar: { type: String, default: '' },
 }, { _id: false });
 
 const blogSchema = new Schema<IBlog>(
