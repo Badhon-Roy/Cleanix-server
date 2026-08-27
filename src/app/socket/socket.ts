@@ -103,3 +103,10 @@ export const emitLeaderAppointmentUpdated = (data?: any) => {
     io.emit('leader_appointment_updated', data || { timestamp: Date.now() });
   }
 };
+
+export const emitCMSUpdated = (data?: any) => {
+  if (io) {
+    io.emit('cms_updated', data || { page: 'home', timestamp: Date.now() });
+  }
+};
+
