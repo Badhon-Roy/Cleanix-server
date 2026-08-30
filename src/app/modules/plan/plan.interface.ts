@@ -10,6 +10,7 @@ export interface IPlan {
   isPopular: boolean;
   popularLabel?: string;
   vipBadge?: string;
+  isAddonFree?: boolean;
   ctaText?: string;
   ctaHref?: string;
   features: string[];
