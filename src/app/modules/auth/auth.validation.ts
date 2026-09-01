@@ -7,6 +7,12 @@ const registerUserValidationSchema = z.object({
     phone: z.string().min(6, 'Phone number is required'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     role: z.enum(['CUSTOMER', 'CLEANER', 'ADMIN']).default('CUSTOMER'),
+    agreeTerms: z
+      .union([z.boolean(), z.string()])
+      .transform((val) => val === true || val === 'true')
+      .refine((val) => val === true, {
+        message: 'You must agree to the Cleanix Terms of Service & Privacy Policy',
+      }),
     avatar: z.string().optional().nullable(),
     dob: z.string().optional().nullable(),
     gender: z.enum(['Male', 'Female', 'Other']).optional().nullable(),

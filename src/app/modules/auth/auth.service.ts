@@ -90,6 +90,14 @@ const registerUser = async (payload: TRegisterUser) => {
     throw new AppError(400, 'User with this email already exists!');
   }
 
+  // Check if Terms & Conditions was agreed
+  if (payload.agreeTerms !== true && (payload as any).agreeTerms !== 'true') {
+    throw new AppError(
+      400,
+      'You must agree to the Cleanix Terms of Service & Privacy Policy to complete registration!',
+    );
+  }
+
   // Check if Email was OTP verified
   const verification = await EmailVerification.findOne({
     email: payload.email.toLowerCase(),

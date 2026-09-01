@@ -6,6 +6,7 @@ export type TRegisterUser = {
   phone: string;
   password: string;
   role: TUserRole;
+  agreeTerms?: boolean;
   avatar?: string;
   dob?: string;
   gender?: TGender;
