@@ -21,6 +21,7 @@ export interface IBooking {
   bookingRef: string;
   user: Types.ObjectId;
   serviceType: Types.ObjectId; // ref to ServiceCategory (populate)
+  coverageArea: Types.ObjectId; // ref to CoverageArea (populate)
   selectedAddons?: string[];
   scheduledDate: string;
   timeSlot: string;

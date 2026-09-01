@@ -3,6 +3,7 @@ import { Booking } from './booking.model';
 import AppError from '../../errors/AppError';
 import { Addon } from '../addon/addon.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
+import { CoverageArea } from '../coverage/coverage.model';
 import { Team } from '../team/team.model';
 import { Cleaner } from '../cleaner/cleaner.model';
 import { emitBookingCreated, emitBookingUpdated } from '../../socket/socket';
@@ -138,6 +139,21 @@ const createBooking = async (userId: string, payload: any) => {
     throw new AppError(400, 'Invalid serviceType: must be a valid ServiceCategory ID');
   }
 
+  // Validate coverageArea is a valid ObjectId and exists
+  if (!payload.coverageArea || !Types.ObjectId.isValid(payload.coverageArea)) {
+    throw new AppError(400, 'Coverage Area / Service Zone selection is required!');
+  }
+
+  const coverageAreaDoc = await CoverageArea.findOne({
+    _id: payload.coverageArea,
+    isActive: true,
+    isDeleted: false,
+  });
+
+  if (!coverageAreaDoc) {
+    throw new AppError(404, 'Selected Coverage Area is invalid or inactive!');
+  }
+
   // Fetch service category by _id
   const serviceCategoryDoc = await ServiceCategory.findOne({
     _id: payload.serviceType,
@@ -190,6 +206,7 @@ const createBooking = async (userId: string, payload: any) => {
     bookingRef,
     user: userId,
     serviceType: new Types.ObjectId(payload.serviceType),
+    coverageArea: new Types.ObjectId(payload.coverageArea),
     selectedAddons,
     customFieldValues,
     scheduledDate: payload.scheduledDate || '2026-08-25',
@@ -209,6 +226,7 @@ const createBooking = async (userId: string, payload: any) => {
   const populatedDoc = await Booking.findById(newBooking._id)
     .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
     .populate('locationId');
 
   emitBookingCreated(populatedDoc);
@@ -219,6 +237,7 @@ const createBooking = async (userId: string, payload: any) => {
 const getMyBookings = async (userId: string) => {
   const bookings = await Booking.find({ user: userId, isDeleted: false })
     .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
     .populate('locationId')
     .sort({ createdAt: -1 });
 
@@ -228,6 +247,7 @@ const getMyBookings = async (userId: string) => {
 const getSingleBooking = async (userId: string, bookingId: string) => {
   const booking = await Booking.findOne({ _id: bookingId, user: userId, isDeleted: false })
     .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
     .populate('locationId');
 
   if (!booking) {
@@ -241,6 +261,7 @@ const getAllBookingsAdmin = async () => {
   const bookings = await Booking.find({ isDeleted: false })
     .populate('user', 'name email phone avatar')
     .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
     .populate({
       path: 'assignedTeam',
       populate: [

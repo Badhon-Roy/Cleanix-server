@@ -27,6 +27,11 @@ const bookingSchema = new Schema<IBooking>(
       ref: 'ServiceCategory',
       required: true,
     },
+    coverageArea: {
+      type: Schema.Types.ObjectId,
+      ref: 'CoverageArea',
+      required: true,
+    },
     selectedAddons: {
       type: [String],
       default: [],
