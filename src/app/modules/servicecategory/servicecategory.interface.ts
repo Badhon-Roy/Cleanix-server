@@ -57,6 +57,9 @@ export interface IServiceCategory {
   whyChoosePoints?: IServiceWhyPoint[];
   faqs?: IServiceFaqItem[];
   fields?: IBookingFieldConfig[];
+  adminShare: number; // Required (default 50%)
+  teamLeaderShare: number; // Required (default 10%)
+  cleanerPoolShare: number; // Required (default 40%)
   status: 'ACTIVE' | 'INACTIVE';
   isDeleted: boolean;
   createdAt?: Date;

@@ -14,7 +14,7 @@ const syncTeamAssignment = async (
   adminUserId?: string,
   dispatchNotes?: string,
 ) => {
-  const booking = await Booking.findById(bookingId);
+  const booking = await Booking.findById(bookingId).populate('serviceType');
   if (!booking) {
     throw new AppError(404, 'Booking not found');
   }
@@ -30,11 +30,14 @@ const syncTeamAssignment = async (
     await team.save();
   }
 
-  const bookingPrice = Number(booking.totalAmount) || 0;
-  const leaderRate = Number(team.commissionRate) || 10;
-  const cleanerRate = Number(team.cleanerPoolShare) || 40;
-  const adminRate = Number(team.adminShare) || 50;
+  // Dynamic Commission Split Logic:
+  // Priority: 1. Service Category rates if configured -> 2. Team rates -> 3. Standard default (50% Admin / 10% Leader / 40% Cleaner)
+  const serviceCategory = (booking.serviceType as any) || {};
+  const adminRate = Number(serviceCategory.adminShare ?? team.adminShare ?? 50);
+  const leaderRate = Number(serviceCategory.teamLeaderShare ?? serviceCategory.commissionRate ?? team.commissionRate ?? 10);
+  const cleanerRate = Number(serviceCategory.cleanerPoolShare ?? team.cleanerPoolShare ?? 40);
 
+  const bookingPrice = Number(booking.totalAmount) || 0;
   const leaderCommission = Math.round((bookingPrice * leaderRate) / 100);
   const cleanerPoolPayout = Math.round((bookingPrice * cleanerRate) / 100);
   const adminSharePayout = Math.round((bookingPrice * adminRate) / 100);
@@ -42,7 +45,15 @@ const syncTeamAssignment = async (
   let assignment = await TeamAssignment.findOne({ booking: booking._id });
 
   if (assignment) {
+    const isTeamChanged = String(assignment.team) !== String(team._id);
     assignment.team = team._id as any;
+
+    // If Admin reassigned the service to a new team:
+    // Reset assigned cleaners so previous team/cleaners receive ৳0!
+    if (isTeamChanged) {
+      assignment.assignedCleaners = [];
+    }
+
     if (adminUserId && Types.ObjectId.isValid(adminUserId)) {
       assignment.assignedBy = new Types.ObjectId(adminUserId) as any;
     }
@@ -52,7 +63,10 @@ const syncTeamAssignment = async (
     assignment.leaderCommission = leaderCommission;
     assignment.cleanerPoolPayout = cleanerPoolPayout;
     assignment.adminSharePayout = adminSharePayout;
-    assignment.status = 'ASSIGNED';
+
+    if (assignment.status !== 'COMPLETED') {
+      assignment.status = 'ASSIGNED';
+    }
     await assignment.save();
   } else {
     assignment = await TeamAssignment.create({
@@ -229,7 +243,7 @@ const getMyTeamAssignmentsFromDB = async (
     }
   }
 
-  // Populate review for each assignment's booking (visible to cleaner & team leader regardless of isApproved/isFeatured)
+  // Populate review and dynamic individual payout for each assignment
   const assignmentsWithReview = await Promise.all(
     uniqueAssignments.map(async (item) => {
       const bId = (item.booking as any)?._id;
@@ -241,6 +255,30 @@ const getMyTeamAssignmentsFromDB = async (
       if (itemObj.booking) {
         itemObj.booking.review = review || null;
       }
+
+      const assignedCleanersCount =
+        Array.isArray(itemObj.assignedCleaners) && itemObj.assignedCleaners.length > 0
+          ? itemObj.assignedCleaners.length
+          : 1;
+
+      const totalPool = Number(itemObj.cleanerPoolPayout) || 0;
+      const individualPayout = Math.round(totalPool / assignedCleanersCount);
+      const isJobCompleted =
+        itemObj.status === 'COMPLETED' || itemObj.booking?.status === 'COMPLETED';
+
+      itemObj.assignedCleanersCount = assignedCleanersCount;
+      itemObj.individualCleanerPayout = individualPayout;
+      itemObj.isPaymentCredited = isJobCompleted;
+      itemObj.paymentCreditStatus = isJobCompleted ? 'CREDITED' : 'PENDING_COMPLETION';
+
+      // If requested by a CLEANER, set payout strictly to their individual equal share
+      if (jwtUser && jwtUser.role === 'CLEANER') {
+        itemObj.payout = individualPayout;
+        itemObj.myShare = individualPayout;
+      } else {
+        itemObj.payout = totalPool;
+      }
+
       return itemObj;
     }),
   );

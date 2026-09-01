@@ -4,6 +4,8 @@ import { ITeam } from './team.interface';
 import { Team } from './team.model';
 import { User } from '../user/user.model';
 import { Cleaner } from '../cleaner/cleaner.model';
+import { TeamAssignment } from '../teamAssignment/teamAssignment.model';
+import { Review } from '../review/review.model';
 import { LeaderAppointmentService } from '../leaderAppointment/leaderAppointment.service';
 
 const createTeamInDB = async (payload: ITeam) => {
@@ -187,6 +189,97 @@ const enrichTeamWithCleanerDuty = async (teamDoc: any) => {
       teamObj.leader.rating = lProf.rating ?? 5.0;
     }
   }
+
+  // Calculate Backend Dashboard Stats for Team Leader
+  const teamId = teamObj._id;
+  const assignments = await TeamAssignment.find({
+    team: teamId,
+    isDeleted: false,
+  });
+
+  const totalAssignedJobs = assignments.length;
+  const completedAssignments = assignments.filter((a) => a.status === 'COMPLETED');
+  const completedJobsCount = completedAssignments.length;
+
+  // Pending dispatch jobs: jobs where no cleaners are assigned yet or not completed
+  const pendingDispatchCount = assignments.filter(
+    (a) =>
+      (!a.assignedCleaners || a.assignedCleaners.length === 0) &&
+      a.status !== 'COMPLETED' &&
+      a.status !== 'CANCELLED',
+  ).length;
+
+  // Real 10% Leader Commission Wallet: sum of leaderCommission for COMPLETED jobs ONLY!
+  const leaderCommissionWallet = completedAssignments.reduce(
+    (sum, a) => sum + (Number(a.leaderCommission) || 0),
+    0,
+  );
+
+  // Cleaner Pool Total Earned for COMPLETED jobs
+  const cleanerPoolEarnings = completedAssignments.reduce(
+    (sum, a) => sum + (Number(a.cleanerPoolPayout) || 0),
+    0,
+  );
+
+  // Pending / estimated commission from active jobs
+  const activeAssignments = assignments.filter(
+    (a) => a.status !== 'COMPLETED' && a.status !== 'CANCELLED',
+  );
+
+  const pendingLeaderCommission = activeAssignments.reduce(
+    (sum, a) => sum + (Number(a.leaderCommission) || 0),
+    0,
+  );
+
+  // Active on duty members count
+  const activeOnDutyCount = Array.isArray(teamObj.members)
+    ? teamObj.members.filter(
+        (m: any) => m.dutyStatus === 'ON_DUTY' || m.dutyStatus === 'IN_SERVICE',
+      ).length
+    : 0;
+
+  // Per-member earnings calculation so Team Leader can see each member's earnings from squad jobs
+  if (Array.isArray(teamObj.members)) {
+    teamObj.members = teamObj.members.map((m: any) => {
+      const mCleanerId = String(m._id || m.id);
+      const memberCompleted = completedAssignments.filter((a) =>
+        a.assignedCleaners?.some((cId: any) => String(cId._id || cId) === mCleanerId),
+      );
+      const memberEarned = memberCompleted.reduce((sum, a) => {
+        const cleanerCount = a.assignedCleaners?.length || 1;
+        return sum + Math.round((Number(a.cleanerPoolPayout) || 0) / cleanerCount);
+      }, 0);
+      return {
+        ...m,
+        totalEarned: memberEarned,
+        completedJobs: memberCompleted.length,
+      };
+    });
+  }
+
+  // Reviews for this squad
+  const bookingIds = assignments.map((a) => a.booking).filter(Boolean);
+  const reviews = await Review.find({ booking: { $in: bookingIds } });
+  let averageTeamRating = '5.0';
+  if (reviews.length > 0) {
+    const avg = reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviews.length;
+    averageTeamRating = avg.toFixed(1);
+  } else if (teamObj.rating) {
+    averageTeamRating = Number(teamObj.rating).toFixed(1);
+  }
+
+  teamObj.dashboardStats = {
+    teamMembersCount: Array.isArray(teamObj.members) ? teamObj.members.length : 0,
+    activeOnDutyCount,
+    pendingDispatchCount,
+    leaderCommissionWallet,
+    pendingLeaderCommission,
+    cleanerPoolEarnings,
+    totalAssignedJobs,
+    completedJobsCount,
+    averageTeamRating,
+    totalReviewsCount: reviews.length,
+  };
 
   return teamObj;
 };
