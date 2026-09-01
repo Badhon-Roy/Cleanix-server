@@ -9,6 +9,7 @@ router.get('/me', auth('CUSTOMER', 'ADMIN'), BookingController.getMyBookings);
 router.get('/available', auth('SUPER_ADMIN', 'ADMIN', 'TEAM_LEADER', 'CLEANER'), BookingController.getAvailableBookings);
 router.get('/', auth('ADMIN'), BookingController.getAllBookingsAdmin);
 router.get('/:bookingId', auth('CUSTOMER', 'ADMIN', 'TEAM_LEADER'), BookingController.getSingleBooking);
+router.get('/:bookingId/pdf', auth('CUSTOMER', 'ADMIN'), BookingController.downloadBookingPDF);
 router.post('/:bookingId/request', auth('SUPER_ADMIN', 'ADMIN', 'TEAM_LEADER'), BookingController.requestBookingByTeam);
 router.patch('/:bookingId/status', auth('ADMIN'), BookingController.updateBookingStatusAdmin);
 router.patch('/:bookingId/assign-team', auth('ADMIN'), BookingController.assignTeamToBookingAdmin);

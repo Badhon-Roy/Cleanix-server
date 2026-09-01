@@ -16,6 +16,7 @@ import { ProjectRoutes } from '../modules/project/project.route';
 import { ContactRoutes } from '../modules/contact/contact.route';
 import { PlanRoutes } from '../modules/plan/plan.route';
 import { GalleryRoutes } from '../modules/gallery/gallery.route';
+import { SubscriptionRoutes } from '../modules/subscription/subscription.route';
 
 const router = Router();
 
@@ -35,6 +36,10 @@ const moduleRoutes = [
   {
     path: '/bookings',
     route: BookingRoutes,
+  },
+  {
+    path: '/subscriptions',
+    route: SubscriptionRoutes,
   },
   {
     path: '/addons',

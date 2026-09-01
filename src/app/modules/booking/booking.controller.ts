@@ -108,6 +108,51 @@ const requestBookingByTeam = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const downloadBookingPDF = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  const booking = await BookingService.getSingleBooking(req.user!.id, bookingId);
+  const userObj: any = booking.user || {};
+  const serviceObj: any = booking.serviceType || {};
+
+  const serviceTitle = typeof serviceObj === 'object' ? serviceObj.title || serviceObj.name || 'Cleaning Service' : 'Cleaning Service';
+
+  const items = Array.isArray(booking.services) && booking.services.length > 0
+    ? booking.services.map((s: any) => ({
+        description: s.name,
+        qty: 1,
+        unitPrice: s.value || 0,
+        total: s.value || 0,
+      }))
+    : [
+        {
+          description: `${serviceTitle} (${booking.scheduledDate || ''})`,
+          qty: 1,
+          unitPrice: booking.totalAmount || 0,
+          total: booking.totalAmount || 0,
+        },
+      ];
+
+  const { generatePDFInvoiceStream } = await import('../../utils/pdfGenerator');
+
+  generatePDFInvoiceStream(res, {
+    title: 'CLEANIX CLEANING SERVICE INVOICE',
+    invoiceNumber: booking.bookingRef || `#CLN-${String(booking._id).slice(-6).toUpperCase()}`,
+    date: new Date((booking as any).createdAt || Date.now()).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    customerName: userObj.name || 'Cleanix Customer',
+    customerPhone: userObj.phone,
+    customerEmail: userObj.email,
+    customerAddress: booking.address || 'Dhaka',
+    items,
+    subtotal: booking.totalAmount || 0,
+    discount: 0,
+    totalAmount: booking.totalAmount || 0,
+    paymentMethod: booking.paymentMethod || 'BKASH',
+    paymentStatus: booking.paymentStatus || 'PAID',
+    trxId: `TXN-${String(booking._id).slice(-8).toUpperCase()}`,
+    notes: booking.notes,
+  });
+});
+
 export const BookingController = {
   createBooking,
   getMyBookings,
@@ -118,4 +163,5 @@ export const BookingController = {
   cancelBooking,
   getAvailableBookings,
   requestBookingByTeam,
+  downloadBookingPDF,
 };

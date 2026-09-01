@@ -134,4 +134,17 @@ export const emitGalleryUpdated = (data?: any) => {
   }
 };
 
+export const emitSubscriptionCreated = (data?: any) => {
+  if (io) {
+    io.emit('subscription_created', data || { timestamp: Date.now() });
+  }
+};
+
+export const emitSubscriptionUpdated = (data?: any) => {
+  if (io) {
+    io.emit('subscription_updated', data || { timestamp: Date.now() });
+  }
+};
+
+
 
