@@ -248,15 +248,36 @@ const updateAssignmentDetailsInDB = async (
     dispatchNotes?: string;
   },
 ) => {
-  const assignment = await TeamAssignment.findById(assignmentId);
+  let assignment = null;
+  if (Types.ObjectId.isValid(assignmentId)) {
+    assignment = await TeamAssignment.findById(assignmentId);
+    if (!assignment) {
+      assignment = await TeamAssignment.findOne({ booking: assignmentId });
+    }
+  }
+
   if (!assignment || assignment.isDeleted) {
     throw new AppError(404, 'Team Assignment record not found');
   }
 
-  if (payload.assignedCleaners) {
-    assignment.assignedCleaners = payload.assignedCleaners.map(
-      (id) => new Types.ObjectId(id),
-    );
+  if (payload.assignedCleaners && Array.isArray(payload.assignedCleaners)) {
+    const validCleaners: Types.ObjectId[] = [];
+    for (const item of payload.assignedCleaners) {
+      if (!item) continue;
+      if (Types.ObjectId.isValid(item)) {
+        validCleaners.push(new Types.ObjectId(item));
+      } else {
+        const foundCleaner = await Cleaner.findOne({
+          $or: [
+            { name: { $regex: new RegExp(`^${String(item).trim()}$`, 'i') } },
+          ],
+        });
+        if (foundCleaner && foundCleaner._id) {
+          validCleaners.push(new Types.ObjectId(foundCleaner._id));
+        }
+      }
+    }
+    assignment.assignedCleaners = validCleaners;
   }
 
   if (payload.dispatchNotes !== undefined) {

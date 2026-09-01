@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 
 export type TBookingPaymentMethod = 'BKASH' | 'NAGAD' | 'STRIPE' | 'COD';
 export type TBookingPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
-export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 export interface IBookingServiceItem {
   name: string;

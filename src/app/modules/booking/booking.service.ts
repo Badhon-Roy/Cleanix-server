@@ -238,6 +238,14 @@ const getMyBookings = async (userId: string) => {
   const bookings = await Booking.find({ user: userId, isDeleted: false })
     .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
     .populate('locationId')
     .sort({ createdAt: -1 });
 
@@ -248,6 +256,14 @@ const getSingleBooking = async (userId: string, bookingId: string) => {
   const booking = await Booking.findOne({ _id: bookingId, user: userId, isDeleted: false })
     .populate('serviceType', 'title slug category badge price heroImage fields')
     .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
     .populate('locationId');
 
   if (!booking) {
