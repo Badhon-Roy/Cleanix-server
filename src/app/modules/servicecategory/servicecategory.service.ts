@@ -156,6 +156,18 @@ const createService = async (payload: Partial<IServiceCategory>): Promise<IServi
     throw new AppError(400, 'Service title and short description are required!');
   }
 
+  const adminShare = payload.adminShare !== undefined ? Number(payload.adminShare) : 50;
+  const teamLeaderShare = payload.teamLeaderShare !== undefined ? Number(payload.teamLeaderShare) : 10;
+  const cleanerPoolShare = payload.cleanerPoolShare !== undefined ? Number(payload.cleanerPoolShare) : 40;
+
+  const totalSplit = adminShare + teamLeaderShare + cleanerPoolShare;
+  if (totalSplit !== 100) {
+    throw new AppError(
+      400,
+      `Commission split percentages must equal 100%! Current sum: ${totalSplit}% (Admin: ${adminShare}%, Leader: ${teamLeaderShare}%, Cleaner: ${cleanerPoolShare}%)`,
+    );
+  }
+
   const slug =
     payload.slug ||
     payload.title
@@ -190,6 +202,9 @@ const createService = async (payload: Partial<IServiceCategory>): Promise<IServi
     whyChoosePoints: payload.whyChoosePoints || [],
     faqs: payload.faqs || [],
     fields: payload.fields || [],
+    adminShare,
+    teamLeaderShare,
+    cleanerPoolShare,
     status: payload.status || 'ACTIVE',
   });
 
@@ -215,9 +230,31 @@ const updateService = async (
     throw new AppError(404, 'Service category not found!');
   }
 
+  // Validate commission split if provided
+  const adminShare = payload.adminShare !== undefined ? Number(payload.adminShare) : service.adminShare ?? 50;
+  const teamLeaderShare = payload.teamLeaderShare !== undefined ? Number(payload.teamLeaderShare) : service.teamLeaderShare ?? 10;
+  const cleanerPoolShare = payload.cleanerPoolShare !== undefined ? Number(payload.cleanerPoolShare) : service.cleanerPoolShare ?? 40;
+
+  if (payload.adminShare !== undefined || payload.teamLeaderShare !== undefined || payload.cleanerPoolShare !== undefined) {
+    const totalSplit = adminShare + teamLeaderShare + cleanerPoolShare;
+    if (totalSplit !== 100) {
+      throw new AppError(
+        400,
+        `Commission split percentages must equal 100%! Current sum: ${totalSplit}% (Admin: ${adminShare}%, Leader: ${teamLeaderShare}%, Cleaner: ${cleanerPoolShare}%)`,
+      );
+    }
+  }
+
+  const updatedPayload = {
+    ...payload,
+    adminShare,
+    teamLeaderShare,
+    cleanerPoolShare,
+  };
+
   const updatedService = await ServiceCategory.findOneAndUpdate(
     { _id: service._id, isDeleted: false },
-    { $set: payload },
+    { $set: updatedPayload },
     { new: true, runValidators: true },
   );
 

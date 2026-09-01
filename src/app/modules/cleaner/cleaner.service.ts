@@ -131,15 +131,43 @@ const getCleanerProfileMeFromDB = async (userId: string) => {
     isDeleted: false,
   }).populate('booking');
 
-  const totalJobsCount = assignments.length;
-  const completedAssignments = assignments.filter(
-    (a) => a.status === 'COMPLETED' || (a.booking as any)?.status === 'COMPLETED',
+  const cleanerIdStr = String(cleaner._id);
+
+  // Total jobs assigned directly to cleaner
+  const myAssignedJobs = assignments.filter((a) =>
+    a.assignedCleaners?.some((c: any) => String(c._id || c) === cleanerIdStr),
   );
+
+  const totalJobsCount = myAssignedJobs.length > 0 ? myAssignedJobs.length : assignments.length;
+
+  // Completed jobs where this cleaner worked
+  const completedAssignments = assignments.filter((a) => {
+    const isCompleted = a.status === 'COMPLETED' || (a.booking as any)?.status === 'COMPLETED';
+    const isAssigned = a.assignedCleaners?.some((c: any) => String(c._id || c) === cleanerIdStr);
+    return isCompleted && isAssigned;
+  });
+
   const completedCount = completedAssignments.length;
-  const totalEstimatedEarnings = assignments.reduce(
-    (sum, a) => sum + (Number(a.cleanerPoolPayout) || 0),
-    0,
-  );
+
+  // Total Credited Wallet Balance: ONLY COMPLETED JOBS (Distributed equally per cleaner)
+  const totalEarnedWallet = completedAssignments.reduce((sum, a) => {
+    const cleanerCount = a.assignedCleaners?.length || 1;
+    const splitPayout = Math.round((Number(a.cleanerPoolPayout) || 0) / cleanerCount);
+    return sum + splitPayout;
+  }, 0);
+
+  // Pending Estimated Earnings for active / in-progress jobs
+  const pendingAssignments = myAssignedJobs.filter((a) => {
+    const isCompleted = a.status === 'COMPLETED' || (a.booking as any)?.status === 'COMPLETED';
+    const isCancelled = a.status === 'CANCELLED' || (a.booking as any)?.status === 'CANCELLED';
+    return !isCompleted && !isCancelled;
+  });
+
+  const pendingEstimatedEarnings = pendingAssignments.reduce((sum, a) => {
+    const cleanerCount = a.assignedCleaners?.length || 1;
+    const splitPayout = Math.round((Number(a.cleanerPoolPayout) || 0) / cleanerCount);
+    return sum + splitPayout;
+  }, 0);
 
   // Backend review & rating calculations
   const bookingIds = assignments
@@ -160,7 +188,9 @@ const getCleanerProfileMeFromDB = async (userId: string) => {
   cleanerObj.dashboardStats = {
     totalJobsCount,
     completedCount,
-    totalEstimatedEarnings,
+    totalEstimatedEarnings: totalEarnedWallet, // available credited wallet
+    totalEarnedWallet,
+    pendingEstimatedEarnings,
     ratingValue,
     totalReviewsCount: reviews.length,
   };
