@@ -154,5 +154,18 @@ export const emitSubscriptionUpdated = (data?: any) => {
   }
 };
 
+export const emitReviewCreated = (data?: any) => {
+  if (io) {
+    io.emit('review_created', data || { timestamp: Date.now() });
+    io.emit('review_updated', data || { timestamp: Date.now() });
+  }
+};
+
+export const emitReviewUpdated = (data?: any) => {
+  if (io) {
+    io.emit('review_updated', data || { timestamp: Date.now() });
+  }
+};
+
 
 

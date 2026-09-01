@@ -5,6 +5,7 @@ import { Booking } from '../booking/booking.model';
 import { Team } from '../team/team.model';
 import { Cleaner } from '../cleaner/cleaner.model';
 import { User } from '../user/user.model';
+import { Review } from '../review/review.model';
 import { emitBookingUpdated, emitTeamAssignmentUpdated } from '../../socket/socket';
 
 const syncTeamAssignment = async (
@@ -228,7 +229,23 @@ const getMyTeamAssignmentsFromDB = async (
     }
   }
 
-  return uniqueAssignments;
+  // Populate review for each assignment's booking (visible to cleaner & team leader regardless of isApproved/isFeatured)
+  const assignmentsWithReview = await Promise.all(
+    uniqueAssignments.map(async (item) => {
+      const bId = (item.booking as any)?._id;
+      const review = bId
+        ? await Review.findOne({ booking: bId }).select('rating feedback isApproved isFeatured createdAt')
+        : null;
+      const itemObj = (item as any).toObject ? (item as any).toObject() : { ...item };
+      itemObj.review = review || null;
+      if (itemObj.booking) {
+        itemObj.booking.review = review || null;
+      }
+      return itemObj;
+    }),
+  );
+
+  return assignmentsWithReview;
 };
 
 const getAllAssignmentsFromDB = async (query: Record<string, unknown>) => {

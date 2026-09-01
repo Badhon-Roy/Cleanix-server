@@ -10,6 +10,8 @@ import { User } from '../user/user.model';
 import { emitBookingCreated, emitBookingUpdated, emitTeamAssignmentUpdated } from '../../socket/socket';
 import { TeamAssignmentService } from '../teamAssignment/teamAssignment.service';
 import { TeamAssignment } from '../teamAssignment/teamAssignment.model';
+import { ReviewService } from '../review/review.service';
+import { Review } from '../review/review.model';
 
 export const calculateBookingPrice = async (payload: {
   serviceSlug?: string;
@@ -336,12 +338,17 @@ const getAllBookingsAdmin = async () => {
     .lean();
 
   const bookingIds = bookings.map((b) => b._id);
-  const assignments = await TeamAssignment.find({
-    booking: { $in: bookingIds },
-    isDeleted: false,
-  })
-    .populate('assignedCleaners', 'name email phone avatar rating status')
-    .lean();
+  const [assignments, reviews] = await Promise.all([
+    TeamAssignment.find({
+      booking: { $in: bookingIds },
+      isDeleted: false,
+    })
+      .populate('assignedCleaners', 'name email phone avatar rating status')
+      .lean(),
+    Review.find({
+      booking: { $in: bookingIds },
+    }).lean(),
+  ]);
 
   const assignmentMap = new Map<string, any>();
   for (const a of assignments) {
@@ -350,12 +357,26 @@ const getAllBookingsAdmin = async () => {
     }
   }
 
+  const reviewMap = new Map<string, any>();
+  for (const r of reviews) {
+    if (r.booking) {
+      reviewMap.set(r.booking.toString(), r);
+    }
+  }
+
   const enrichedBookings = bookings.map((b) => {
     const a = assignmentMap.get(b._id.toString());
+    const r = reviewMap.get(b._id.toString());
+    const rating = r?.rating || b.proofOfWork?.rating || null;
+    const feedback = r?.feedback || b.proofOfWork?.feedback || '';
+
     return {
       ...b,
       assignedCleaners: a?.assignedCleaners || [],
       teamAssignment: a || null,
+      review: r || null,
+      customerRating: rating,
+      customerFeedback: feedback,
     };
   });
 
@@ -815,6 +836,17 @@ const confirmBookingCompletionInDB = async (
         $inc: { totalJobsDone: 1, totalEarnings: cleanerShare },
       });
     }
+  }
+
+  // Create or Update Review & Rating in Review Collection
+  try {
+    await ReviewService.createOrUpdateReviewInDB(userId, {
+      bookingId: booking._id.toString(),
+      rating: payload?.rating || 5,
+      feedback: payload?.feedback || '',
+    });
+  } catch (reviewErr) {
+    console.error('Failed to create review record on completion confirmation:', reviewErr);
   }
 
   const updatedDoc = await Booking.findById(booking._id)

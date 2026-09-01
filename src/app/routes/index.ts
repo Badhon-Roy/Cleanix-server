@@ -17,6 +17,7 @@ import { ContactRoutes } from '../modules/contact/contact.route';
 import { PlanRoutes } from '../modules/plan/plan.route';
 import { GalleryRoutes } from '../modules/gallery/gallery.route';
 import { SubscriptionRoutes } from '../modules/subscription/subscription.route';
+import { ReviewRoutes } from '../modules/review/review.route';
 
 const router = Router();
 
@@ -36,6 +37,10 @@ const moduleRoutes = [
   {
     path: '/bookings',
     route: BookingRoutes,
+  },
+  {
+    path: '/reviews',
+    route: ReviewRoutes,
   },
   {
     path: '/subscriptions',
