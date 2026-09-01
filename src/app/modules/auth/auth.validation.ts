@@ -11,7 +11,7 @@ const registerUserValidationSchema = z.object({
       .union([z.boolean(), z.string()])
       .transform((val) => val === true || val === 'true')
       .refine((val) => val === true, {
-        message: 'You must agree to the Cleanix Terms of Service & Privacy Policy',
+        message: 'Please accept the Terms of Service and Privacy Policy to proceed.',
       }),
     avatar: z.string().optional().nullable(),
     dob: z.string().optional().nullable(),

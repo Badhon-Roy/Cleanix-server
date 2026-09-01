@@ -94,7 +94,7 @@ const registerUser = async (payload: TRegisterUser) => {
   if (payload.agreeTerms !== true && (payload as any).agreeTerms !== 'true') {
     throw new AppError(
       400,
-      'You must agree to the Cleanix Terms of Service & Privacy Policy to complete registration!',
+      'Please accept the Terms of Service and Privacy Policy to proceed.',
     );
   }
 
