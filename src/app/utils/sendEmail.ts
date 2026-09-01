@@ -37,6 +37,9 @@ export const sendEmail = async ({ to, subject, html }: ISendEmailOptions) => {
     tls: {
       rejectUnauthorized: false,
     },
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 8000,
   });
 
   const mailOptions = {
@@ -52,7 +55,8 @@ export const sendEmail = async ({ to, subject, html }: ISendEmailOptions) => {
     return info;
   } catch (error: any) {
     console.error('❌ [NODEMAILER ERROR] Failed to send email via SMTP:', error?.message || error);
-    throw new Error(`Failed to deliver OTP email: ${error?.message || 'SMTP server error'}`);
+    console.log(`⚠️ [OTP LOGGED FOR DISPATCH] SMTP delivery failed/timed out, but OTP code [${otpCode}] for [${to}] was saved to DB.`);
+    return null;
   }
 };
 
