@@ -30,7 +30,7 @@ const reviewSchema = new Schema<IReview>(
     },
     isApproved: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     isFeatured: {
       type: Boolean,

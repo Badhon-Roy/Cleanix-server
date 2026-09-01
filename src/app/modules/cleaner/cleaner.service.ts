@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import AppError from '../../errors/AppError';
 import { Cleaner } from './cleaner.model';
 import { User } from '../user/user.model';
+import { Team } from '../team/team.model';
+import { TeamAssignment } from '../teamAssignment/teamAssignment.model';
+import { Review } from '../review/review.model';
 import { ICleaner } from './cleaner.interface';
 import { sendEmail, generateCleanerApprovalEmailHTML } from '../../utils/sendEmail';
 
@@ -106,7 +109,63 @@ const getCleanerProfileMeFromDB = async (userId: string) => {
   if (!cleaner || cleaner.isDeleted) {
     throw new AppError(404, 'Cleaner profile not found');
   }
-  return cleaner;
+
+  // Find assignments for this cleaner / cleaner squad
+  const team = await Team.findOne({
+    isDeleted: false,
+    $or: [
+      { leader: cleaner._id },
+      { members: cleaner._id },
+      { leader: cleaner.user },
+      { members: cleaner.user },
+    ],
+  });
+
+  const orConds: Record<string, any>[] = [{ assignedCleaners: cleaner._id }];
+  if (team) {
+    orConds.push({ team: team._id });
+  }
+
+  const assignments = await TeamAssignment.find({
+    $or: orConds,
+    isDeleted: false,
+  }).populate('booking');
+
+  const totalJobsCount = assignments.length;
+  const completedAssignments = assignments.filter(
+    (a) => a.status === 'COMPLETED' || (a.booking as any)?.status === 'COMPLETED',
+  );
+  const completedCount = completedAssignments.length;
+  const totalEstimatedEarnings = assignments.reduce(
+    (sum, a) => sum + (Number(a.cleanerPoolPayout) || 0),
+    0,
+  );
+
+  // Backend review & rating calculations
+  const bookingIds = assignments
+    .map((a) => (a.booking as any)?._id)
+    .filter(Boolean);
+
+  const reviews = await Review.find({ booking: { $in: bookingIds } });
+
+  let ratingValue = '5.0';
+  if (reviews.length > 0) {
+    const avg = reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviews.length;
+    ratingValue = avg.toFixed(1);
+  } else if (cleaner.rating) {
+    ratingValue = Number(cleaner.rating).toFixed(1);
+  }
+
+  const cleanerObj: Record<string, any> = cleaner.toObject();
+  cleanerObj.dashboardStats = {
+    totalJobsCount,
+    completedCount,
+    totalEstimatedEarnings,
+    ratingValue,
+    totalReviewsCount: reviews.length,
+  };
+
+  return cleanerObj;
 };
 
 const toggleDutyStatusInDB = async (

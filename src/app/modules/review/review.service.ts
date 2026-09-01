@@ -38,7 +38,7 @@ const createOrUpdateReviewInDB = async (
       customer: new Types.ObjectId(userId),
       rating: numRating,
       feedback: payload.feedback || '',
-      isApproved: true,
+      isApproved: false,
       isFeatured: false,
     });
   }
