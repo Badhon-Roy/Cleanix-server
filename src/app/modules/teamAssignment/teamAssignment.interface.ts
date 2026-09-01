@@ -7,7 +7,7 @@ export interface ITeamAssignment {
   assignedBy?: Types.ObjectId;
   assignedCleaners?: Types.ObjectId[];
   dispatchNotes?: string;
-  status: 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'ASSIGNED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETION_REQUESTED' | 'COMPLETED' | 'CANCELLED';
   leaderCommission: number;
   cleanerPoolPayout: number;
   adminSharePayout: number;

@@ -29,7 +29,7 @@ const teamAssignmentSchema = new Schema<ITeamAssignment>(
     },
     status: {
       type: String,
-      enum: ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+      enum: ['ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS', 'COMPLETION_REQUESTED', 'COMPLETED', 'CANCELLED'],
       default: 'ASSIGNED',
     },
     leaderCommission: {

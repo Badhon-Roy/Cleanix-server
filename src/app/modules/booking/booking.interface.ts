@@ -2,7 +2,27 @@ import { Types } from 'mongoose';
 
 export type TBookingPaymentMethod = 'BKASH' | 'NAGAD' | 'STRIPE' | 'COD';
 export type TBookingPaymentStatus = 'PENDING' | 'PAID' | 'FAILED';
-export type TBookingStatus = 'PENDING' | 'CONFIRMED' | 'ASSIGNED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+export type TBookingStatus =
+  | 'PENDING'
+  | 'SCHEDULED'
+  | 'CONFIRMED'
+  | 'ASSIGNED'
+  | 'EN_ROUTE'
+  | 'IN_PROGRESS'
+  | 'COMPLETION_REQUESTED'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export interface IProofOfWork {
+  beforePhotos?: string[];
+  afterPhotos?: string[];
+  notes?: string;
+  checklist?: { id: number; text: string; done: boolean }[];
+  submittedAt?: Date;
+  approvedAt?: Date;
+  rating?: number;
+  feedback?: string;
+}
 
 export interface IBookingServiceItem {
   name: string;
@@ -38,5 +58,6 @@ export interface IBooking {
   totalAmount: number;
   customFieldValues?: Record<string, any>;
   notes?: string;
+  proofOfWork?: IProofOfWork;
   isDeleted?: boolean;
 }

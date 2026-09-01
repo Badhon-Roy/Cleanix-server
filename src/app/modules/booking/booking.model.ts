@@ -65,8 +65,18 @@ const bookingSchema = new Schema<IBooking>(
     },
     status: {
       type: String,
-      enum: ['PENDING', 'CONFIRMED', 'ASSIGNED', 'EN_ROUTE', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
-      default: 'CONFIRMED',
+      enum: [
+        'PENDING',
+        'SCHEDULED',
+        'CONFIRMED',
+        'ASSIGNED',
+        'EN_ROUTE',
+        'IN_PROGRESS',
+        'COMPLETION_REQUESTED',
+        'COMPLETED',
+        'CANCELLED',
+      ],
+      default: 'PENDING',
     },
     cleanerTeam: {
       type: String,
@@ -99,6 +109,22 @@ const bookingSchema = new Schema<IBooking>(
     },
     notes: {
       type: String,
+    },
+    proofOfWork: {
+      beforePhotos: [{ type: String }],
+      afterPhotos: [{ type: String }],
+      notes: { type: String, default: '' },
+      checklist: [
+        {
+          id: { type: Number },
+          text: { type: String },
+          done: { type: Boolean, default: false },
+        },
+      ],
+      submittedAt: { type: Date },
+      approvedAt: { type: Date },
+      rating: { type: Number },
+      feedback: { type: String },
     },
     isDeleted: {
       type: Boolean,

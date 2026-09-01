@@ -6,8 +6,10 @@ import { ServiceCategory } from '../servicecategory/servicecategory.model';
 import { CoverageArea } from '../coverage/coverage.model';
 import { Team } from '../team/team.model';
 import { Cleaner } from '../cleaner/cleaner.model';
-import { emitBookingCreated, emitBookingUpdated } from '../../socket/socket';
+import { User } from '../user/user.model';
+import { emitBookingCreated, emitBookingUpdated, emitTeamAssignmentUpdated } from '../../socket/socket';
 import { TeamAssignmentService } from '../teamAssignment/teamAssignment.service';
+import { TeamAssignment } from '../teamAssignment/teamAssignment.model';
 
 export const calculateBookingPrice = async (payload: {
   serviceSlug?: string;
@@ -215,7 +217,7 @@ const createBooking = async (userId: string, payload: any) => {
     locationId: payload.locationId,
     paymentMethod: payload.paymentMethod || 'BKASH',
     paymentStatus,
-    status: 'CONFIRMED',
+    status: 'PENDING',
     services: servicesList,
     addonsTotal,
     totalAmount,
@@ -241,15 +243,40 @@ const getMyBookings = async (userId: string) => {
     .populate({
       path: 'assignedTeam',
       populate: [
-        { path: 'leader', select: 'name email phone rating' },
+        { path: 'leader', select: 'name email phone rating avatar' },
         { path: 'members', select: 'name email phone role' },
         { path: 'zone', select: 'zoneName district' },
       ],
     })
     .populate('locationId')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
-  return bookings;
+  const bookingIds = bookings.map((b) => b._id);
+  const assignments = await TeamAssignment.find({
+    booking: { $in: bookingIds },
+    isDeleted: false,
+  })
+    .populate('assignedCleaners', 'name email phone avatar rating status')
+    .lean();
+
+  const assignmentMap = new Map<string, any>();
+  for (const a of assignments) {
+    if (a.booking) {
+      assignmentMap.set(a.booking.toString(), a);
+    }
+  }
+
+  const enrichedBookings = bookings.map((b) => {
+    const a = assignmentMap.get(b._id.toString());
+    return {
+      ...b,
+      assignedCleaners: a?.assignedCleaners || [],
+      teamAssignment: a || null,
+    };
+  });
+
+  return enrichedBookings;
 };
 
 const getSingleBooking = async (userId: string, bookingId: string) => {
@@ -259,18 +286,27 @@ const getSingleBooking = async (userId: string, bookingId: string) => {
     .populate({
       path: 'assignedTeam',
       populate: [
-        { path: 'leader', select: 'name email phone rating' },
+        { path: 'leader', select: 'name email phone rating avatar' },
         { path: 'members', select: 'name email phone role' },
         { path: 'zone', select: 'zoneName district' },
       ],
     })
-    .populate('locationId');
+    .populate('locationId')
+    .lean();
 
   if (!booking) {
     throw new AppError(404, 'Booking not found!');
   }
 
-  return booking;
+  const assignment = await TeamAssignment.findOne({ booking: booking._id, isDeleted: false })
+    .populate('assignedCleaners', 'name email phone avatar rating status')
+    .lean();
+
+  return {
+    ...booking,
+    assignedCleaners: assignment?.assignedCleaners || [],
+    teamAssignment: assignment || null,
+  };
 };
 
 const getAllBookingsAdmin = async () => {
@@ -281,7 +317,7 @@ const getAllBookingsAdmin = async () => {
     .populate({
       path: 'assignedTeam',
       populate: [
-        { path: 'leader', select: 'name email phone rating' },
+        { path: 'leader', select: 'name email phone rating avatar' },
         { path: 'members', select: 'name email phone role' },
         { path: 'zone', select: 'zoneName district' },
       ],
@@ -296,9 +332,34 @@ const getAllBookingsAdmin = async () => {
       select: 'name email phone',
     })
     .populate('locationId')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
-  return bookings;
+  const bookingIds = bookings.map((b) => b._id);
+  const assignments = await TeamAssignment.find({
+    booking: { $in: bookingIds },
+    isDeleted: false,
+  })
+    .populate('assignedCleaners', 'name email phone avatar rating status')
+    .lean();
+
+  const assignmentMap = new Map<string, any>();
+  for (const a of assignments) {
+    if (a.booking) {
+      assignmentMap.set(a.booking.toString(), a);
+    }
+  }
+
+  const enrichedBookings = bookings.map((b) => {
+    const a = assignmentMap.get(b._id.toString());
+    return {
+      ...b,
+      assignedCleaners: a?.assignedCleaners || [],
+      teamAssignment: a || null,
+    };
+  });
+
+  return enrichedBookings;
 };
 
 const updateBookingStatusAdmin = async (
@@ -324,7 +385,7 @@ const updateBookingStatusAdmin = async (
       }
       booking.assignedTeam = targetTeam._id as any;
       booking.cleanerTeam = `${targetTeam.teamName} (${targetTeam.teamCode})`;
-      booking.status = 'ASSIGNED';
+      booking.status = 'SCHEDULED';
 
       if (booking.teamRequests && booking.teamRequests.length > 0) {
         booking.teamRequests.forEach((req) => {
@@ -359,7 +420,7 @@ const updateBookingStatusAdmin = async (
       }
       booking.assignedTeam = foundTeam._id as any;
       booking.cleanerTeam = `${foundTeam.teamName} (${foundTeam.teamCode})`;
-      booking.status = 'ASSIGNED';
+      booking.status = 'SCHEDULED';
 
       if (booking.teamRequests && booking.teamRequests.length > 0) {
         booking.teamRequests.forEach((req) => {
@@ -395,6 +456,7 @@ const updateBookingStatusAdmin = async (
     .populate('locationId');
 
   emitBookingUpdated(updatedDoc);
+  emitTeamAssignmentUpdated(updatedDoc);
 
   return updatedDoc;
 };
@@ -429,7 +491,7 @@ const assignTeamToBookingAdmin = async (
     }
     booking.assignedTeam = targetTeam._id as any;
     booking.cleanerTeam = `${targetTeam.teamName} (${targetTeam.teamCode})`;
-    booking.status = 'ASSIGNED';
+    booking.status = 'SCHEDULED';
 
     if (booking.teamRequests && booking.teamRequests.length > 0) {
       booking.teamRequests.forEach((req) => {
@@ -450,7 +512,7 @@ const assignTeamToBookingAdmin = async (
     );
   } else if (payload.cleanerTeam) {
     booking.cleanerTeam = payload.cleanerTeam;
-    booking.status = 'ASSIGNED';
+    booking.status = 'SCHEDULED';
   }
 
   if (payload.notes) {
@@ -477,6 +539,7 @@ const assignTeamToBookingAdmin = async (
     .populate('locationId');
 
   emitBookingUpdated(updatedDoc);
+  emitTeamAssignmentUpdated(updatedDoc);
 
   return updatedDoc;
 };
@@ -622,7 +685,16 @@ const requestBookingByTeamInDB = async (
 
 const updateBookingProgressByTeamInDB = async (
   bookingId: string,
-  payload: { status: 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'; notes?: string },
+  payload: {
+    status: 'CONFIRMED' | 'ASSIGNED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETION_REQUESTED' | 'COMPLETED' | 'CANCELLED';
+    notes?: string;
+    proofOfWork?: {
+      beforePhotos?: string[];
+      afterPhotos?: string[];
+      notes?: string;
+      checklist?: { id: number; text: string; done: boolean }[];
+    };
+  },
 ) => {
   const booking = await Booking.findById(bookingId);
   if (!booking || booking.isDeleted) {
@@ -634,6 +706,23 @@ const updateBookingProgressByTeamInDB = async (
     if (payload.status === 'COMPLETED') {
       booking.paymentStatus = 'PAID';
     }
+
+    // Keep TeamAssignment status in sync as well
+    const assignmentUpdate: Record<string, any> = { status: payload.status };
+    if (payload.status === 'COMPLETED') {
+      assignmentUpdate.completedAt = new Date();
+    }
+    await TeamAssignment.findOneAndUpdate(
+      { booking: booking._id },
+      assignmentUpdate,
+    );
+  }
+
+  if (payload.proofOfWork) {
+    booking.proofOfWork = {
+      ...payload.proofOfWork,
+      submittedAt: new Date(),
+    };
   }
 
   if (payload.notes) {
@@ -641,6 +730,92 @@ const updateBookingProgressByTeamInDB = async (
   }
 
   await booking.save();
+
+  const updatedDoc = await Booking.findById(booking._id)
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
+    .populate('locationId');
+
+  if (updatedDoc) {
+    emitBookingUpdated(updatedDoc);
+  }
+
+  return updatedDoc;
+};
+
+const confirmBookingCompletionInDB = async (
+  bookingId: string,
+  userId: string,
+  payload?: { rating?: number; feedback?: string },
+) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking || booking.isDeleted) {
+    throw new AppError(404, 'Customer service booking not found!');
+  }
+
+  // Verify authorization: current user must be the booking owner or an admin
+  if (booking.user.toString() !== userId) {
+    const userDoc = await User.findById(userId);
+    if (!userDoc || userDoc.role !== 'ADMIN') {
+      throw new AppError(403, 'You are not authorized to confirm this booking completion!');
+    }
+  }
+
+  booking.status = 'COMPLETED';
+  booking.paymentStatus = 'PAID';
+
+  if (booking.proofOfWork) {
+    booking.proofOfWork.approvedAt = new Date();
+    if (payload?.rating) booking.proofOfWork.rating = payload.rating;
+    if (payload?.feedback) booking.proofOfWork.feedback = payload.feedback;
+  } else {
+    booking.proofOfWork = {
+      approvedAt: new Date(),
+      rating: payload?.rating || 5,
+      feedback: payload?.feedback || '',
+    };
+  }
+
+  await booking.save();
+
+  // Sync TeamAssignment
+  const assignment = await TeamAssignment.findOneAndUpdate(
+    { booking: booking._id },
+    { status: 'COMPLETED', completedAt: new Date() },
+    { new: true },
+  );
+
+  // Increment team completed jobs count
+  if (booking.assignedTeam) {
+    await Team.findByIdAndUpdate(booking.assignedTeam, {
+      $inc: { completedJobsCount: 1 },
+    });
+  } else if (assignment?.team) {
+    await Team.findByIdAndUpdate(assignment.team, {
+      $inc: { completedJobsCount: 1 },
+    });
+  }
+
+  // Increment individual cleaner statistics if allocated
+  if (assignment?.assignedCleaners && assignment.assignedCleaners.length > 0) {
+    const cleanerShare = Math.round(
+      (assignment.cleanerPoolPayout || 0) / assignment.assignedCleaners.length,
+    );
+    for (const cleanerId of assignment.assignedCleaners) {
+      await Cleaner.findByIdAndUpdate(cleanerId, {
+        $inc: { totalJobsDone: 1, totalEarnings: cleanerShare },
+      });
+    }
+  }
 
   const updatedDoc = await Booking.findById(booking._id)
     .populate('user', 'name email phone avatar')
@@ -674,4 +849,5 @@ export const BookingService = {
   getAvailableBookingsForTeamsFromDB,
   requestBookingByTeamInDB,
   updateBookingProgressByTeamInDB,
+  confirmBookingCompletionInDB,
 };

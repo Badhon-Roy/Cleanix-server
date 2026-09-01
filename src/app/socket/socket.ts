@@ -86,6 +86,14 @@ export const emitTeamUpdated = (data?: any) => {
   }
 };
 
+export const emitTeamAssignmentUpdated = (data?: any) => {
+  if (io) {
+    io.emit('team_assignment_updated', data || { timestamp: Date.now() });
+    io.emit('team_updated', data || { timestamp: Date.now() });
+    io.emit('booking_updated', data || { timestamp: Date.now() });
+  }
+};
+
 export const emitCleanerUpdated = (data?: any) => {
   if (io) {
     io.emit('cleaner_updated', data || { timestamp: Date.now() });

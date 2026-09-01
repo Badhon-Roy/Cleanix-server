@@ -165,6 +165,19 @@ const updateBookingProgress = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
+const confirmBookingCompletion = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  const userId = req.user!.id;
+  const result = await BookingService.confirmBookingCompletionInDB(bookingId, userId, req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Booking completion confirmed successfully!',
+    data: result,
+  });
+});
+
 export const BookingController = {
   createBooking,
   getMyBookings,
@@ -177,4 +190,5 @@ export const BookingController = {
   requestBookingByTeam,
   downloadBookingPDF,
   updateBookingProgress,
+  confirmBookingCompletion,
 };

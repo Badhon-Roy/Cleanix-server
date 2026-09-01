@@ -4,6 +4,8 @@ import { TeamAssignment } from './teamAssignment.model';
 import { Booking } from '../booking/booking.model';
 import { Team } from '../team/team.model';
 import { Cleaner } from '../cleaner/cleaner.model';
+import { User } from '../user/user.model';
+import { emitBookingUpdated, emitTeamAssignmentUpdated } from '../../socket/socket';
 
 const syncTeamAssignment = async (
   bookingId: string | Types.ObjectId,
@@ -64,6 +66,13 @@ const syncTeamAssignment = async (
       assignedAt: new Date(),
     });
   }
+
+  emitTeamAssignmentUpdated({
+    bookingId: booking._id,
+    teamId: team._id,
+    assignmentId: assignment._id,
+    timestamp: Date.now(),
+  });
 
   return assignment;
 };
@@ -130,43 +139,55 @@ const getMyTeamAssignmentsFromDB = async (
     });
   }
 
-  if (!team) {
+  const cleanerProfile = await Cleaner.findOne({ user: jwtUser.id });
+
+  const orConditions: Record<string, any>[] = [];
+  if (team) {
+    orConditions.push({ team: team._id });
+  }
+  if (cleanerProfile) {
+    orConditions.push({ assignedCleaners: cleanerProfile._id });
+  }
+
+  if (orConditions.length === 0) {
     return [];
   }
 
   // Auto-sync Bookings assigned to this team that don't have a TeamAssignment record yet
-  const assignedBookings = await Booking.find({
-    $or: [
-      { assignedTeam: team._id },
-      { cleanerTeam: { $regex: new RegExp(team.teamCode, 'i') } },
-      { cleanerTeam: { $regex: new RegExp(team.teamName, 'i') } },
-    ],
-    isDeleted: false,
-  });
+  if (team) {
+    const assignedBookings = await Booking.find({
+      $or: [
+        { assignedTeam: team._id },
+        { cleanerTeam: { $regex: new RegExp(team.teamCode, 'i') } },
+        { cleanerTeam: { $regex: new RegExp(team.teamName, 'i') } },
+      ],
+      isDeleted: false,
+    });
 
-  for (const b of assignedBookings) {
-    const existingAssignment = await TeamAssignment.findOne({ booking: b._id });
-    if (!existingAssignment) {
-      const bookingPrice = Number(b.totalAmount) || 0;
-      const leaderRate = Number(team.commissionRate) || 10;
-      const cleanerRate = Number(team.cleanerPoolShare) || 40;
-      const adminRate = Number(team.adminShare) || 50;
+    for (const b of assignedBookings) {
+      const existingAssignment = await TeamAssignment.findOne({ booking: b._id });
+      if (!existingAssignment) {
+        const bookingPrice = Number(b.totalAmount) || 0;
+        const leaderRate = Number(team.commissionRate) || 10;
+        const cleanerRate = Number(team.cleanerPoolShare) || 40;
+        const adminRate = Number(team.adminShare) || 50;
 
-      await TeamAssignment.create({
-        booking: b._id,
-        team: team._id,
-        dispatchNotes: b.notes || '',
-        status: b.status === 'COMPLETED' ? 'COMPLETED' : b.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'ASSIGNED',
-        leaderCommission: Math.round((bookingPrice * leaderRate) / 100),
-        cleanerPoolPayout: Math.round((bookingPrice * cleanerRate) / 100),
-        adminSharePayout: Math.round((bookingPrice * adminRate) / 100),
-        assignedAt: (b as any).createdAt || new Date(),
-      });
+        await TeamAssignment.create({
+          booking: b._id,
+          team: team._id,
+          dispatchNotes: b.notes || '',
+          status: b.status === 'COMPLETED' ? 'COMPLETED' : b.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'ASSIGNED',
+          leaderCommission: Math.round((bookingPrice * leaderRate) / 100),
+          cleanerPoolPayout: Math.round((bookingPrice * cleanerRate) / 100),
+          adminSharePayout: Math.round((bookingPrice * adminRate) / 100),
+          assignedAt: (b as any).createdAt || new Date(),
+        });
+      }
     }
   }
 
   const allAssignments = await TeamAssignment.find({
-    team: team._id,
+    $or: orConditions,
     isDeleted: false,
   })
     .populate({
@@ -244,7 +265,7 @@ const updateAssignmentDetailsInDB = async (
   assignmentId: string,
   payload: {
     assignedCleaners?: string[];
-    status?: 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+    status?: 'ASSIGNED' | 'EN_ROUTE' | 'IN_PROGRESS' | 'COMPLETION_REQUESTED' | 'COMPLETED' | 'CANCELLED';
     dispatchNotes?: string;
   },
 ) => {
@@ -264,20 +285,59 @@ const updateAssignmentDetailsInDB = async (
     const validCleaners: Types.ObjectId[] = [];
     for (const item of payload.assignedCleaners) {
       if (!item) continue;
+      let cleanerDoc = null;
+
       if (Types.ObjectId.isValid(item)) {
-        validCleaners.push(new Types.ObjectId(item));
-      } else {
-        const foundCleaner = await Cleaner.findOne({
+        const itemObjId = new Types.ObjectId(item);
+        // 1. First check if it's already a direct Cleaner document ID
+        cleanerDoc = await Cleaner.findById(itemObjId);
+        if (!cleanerDoc) {
+          // 2. Check if it's a User ID that has a Cleaner profile
+          cleanerDoc = await Cleaner.findOne({ user: itemObjId });
+        }
+      }
+
+      // 3. If not found by ID, look up by name, email, or phone
+      if (!cleanerDoc) {
+        const strVal = String(item).trim();
+        cleanerDoc = await Cleaner.findOne({
           $or: [
-            { name: { $regex: new RegExp(`^${String(item).trim()}$`, 'i') } },
+            { name: { $regex: new RegExp(`^${strVal}$`, 'i') } },
+            { email: { $regex: new RegExp(`^${strVal}$`, 'i') } },
+            { phone: { $regex: new RegExp(`^${strVal}$`, 'i') } },
           ],
         });
-        if (foundCleaner && foundCleaner._id) {
-          validCleaners.push(new Types.ObjectId(foundCleaner._id));
+      }
+
+      // 4. If cleaner profile still doesn't exist but User exists, auto-create Cleaner profile
+      if (!cleanerDoc && Types.ObjectId.isValid(item)) {
+        const userDoc = await User.findById(item);
+        if (userDoc) {
+          cleanerDoc = await Cleaner.create({
+            user: userDoc._id,
+            name: userDoc.name || 'Cleaner Staff',
+            email: userDoc.email || `${userDoc._id}@cleanix.com`,
+            phone: userDoc.phone || '01700000000',
+            avatar: (userDoc as any).avatar || null,
+            dutyStatus: 'ON_DUTY',
+          });
         }
+      }
+
+      if (cleanerDoc && cleanerDoc._id) {
+        validCleaners.push(new Types.ObjectId(cleanerDoc._id));
       }
     }
     assignment.assignedCleaners = validCleaners;
+
+    if (validCleaners.length > 0 && !payload.status) {
+      assignment.status = 'ASSIGNED';
+      const booking = await Booking.findById(assignment.booking);
+      if (booking) {
+        booking.status = 'ASSIGNED';
+        await booking.save();
+      }
+    }
   }
 
   if (payload.dispatchNotes !== undefined) {
@@ -290,8 +350,14 @@ const updateAssignmentDetailsInDB = async (
     // Sync booking status
     const booking = await Booking.findById(assignment.booking);
     if (booking) {
-      if (payload.status === 'IN_PROGRESS') {
+      if (payload.status === 'ASSIGNED') {
+        booking.status = 'ASSIGNED';
+      } else if (payload.status === 'EN_ROUTE') {
+        booking.status = 'EN_ROUTE';
+      } else if (payload.status === 'IN_PROGRESS') {
         booking.status = 'IN_PROGRESS';
+      } else if (payload.status === 'COMPLETION_REQUESTED') {
+        booking.status = 'COMPLETION_REQUESTED';
       } else if (payload.status === 'COMPLETED') {
         booking.status = 'COMPLETED';
         assignment.completedAt = new Date();
@@ -327,6 +393,36 @@ const updateAssignmentDetailsInDB = async (
       ],
     })
     .populate('assignedCleaners', 'name email phone rating status');
+
+  if (updated && updated.booking) {
+    const bookingId = (updated.booking as any)._id || (updated.booking as any).id;
+    const bookingDoc = await Booking.findById(bookingId)
+      .populate('user', 'name email phone avatar')
+      .populate('serviceType', 'title slug category badge price heroImage fields')
+      .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
+      .populate({
+        path: 'assignedTeam',
+        populate: [
+          { path: 'leader', select: 'name email phone rating avatar' },
+          { path: 'members', select: 'name email phone role' },
+          { path: 'zone', select: 'zoneName district' },
+        ],
+      })
+      .populate('locationId')
+      .lean();
+
+    if (bookingDoc) {
+      const enrichedBooking = {
+        ...bookingDoc,
+        assignedCleaners: updated.assignedCleaners || [],
+        teamAssignment: updated,
+      };
+      emitBookingUpdated(enrichedBooking as any);
+      emitTeamAssignmentUpdated(enrichedBooking as any);
+    }
+  }
+
+  emitTeamAssignmentUpdated(updated as any);
 
   return updated;
 };
