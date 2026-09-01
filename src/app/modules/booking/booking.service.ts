@@ -604,6 +604,49 @@ const requestBookingByTeamInDB = async (
   return updatedDoc;
 };
 
+const updateBookingProgressByTeamInDB = async (
+  bookingId: string,
+  payload: { status: 'CONFIRMED' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'; notes?: string },
+) => {
+  const booking = await Booking.findById(bookingId);
+  if (!booking || booking.isDeleted) {
+    throw new AppError(404, 'Customer service booking not found!');
+  }
+
+  if (payload.status) {
+    booking.status = payload.status;
+    if (payload.status === 'COMPLETED') {
+      booking.paymentStatus = 'PAID';
+    }
+  }
+
+  if (payload.notes) {
+    booking.notes = payload.notes;
+  }
+
+  await booking.save();
+
+  const updatedDoc = await Booking.findById(booking._id)
+    .populate('user', 'name email phone avatar')
+    .populate('serviceType', 'title slug category badge price heroImage fields')
+    .populate('coverageArea', 'zoneName district areasIncluded zipCodes')
+    .populate({
+      path: 'assignedTeam',
+      populate: [
+        { path: 'leader', select: 'name email phone rating' },
+        { path: 'members', select: 'name email phone role' },
+        { path: 'zone', select: 'zoneName district' },
+      ],
+    })
+    .populate('locationId');
+
+  if (updatedDoc) {
+    emitBookingUpdated(updatedDoc);
+  }
+
+  return updatedDoc;
+};
+
 export const BookingService = {
   createBooking,
   getMyBookings,
@@ -614,4 +657,5 @@ export const BookingService = {
   cancelBooking,
   getAvailableBookingsForTeamsFromDB,
   requestBookingByTeamInDB,
+  updateBookingProgressByTeamInDB,
 };

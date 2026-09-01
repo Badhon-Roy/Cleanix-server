@@ -12,6 +12,7 @@ router.get('/:bookingId', auth('CUSTOMER', 'ADMIN', 'TEAM_LEADER'), BookingContr
 router.get('/:bookingId/pdf', auth('CUSTOMER', 'ADMIN'), BookingController.downloadBookingPDF);
 router.post('/:bookingId/request', auth('SUPER_ADMIN', 'ADMIN', 'TEAM_LEADER'), BookingController.requestBookingByTeam);
 router.patch('/:bookingId/status', auth('ADMIN'), BookingController.updateBookingStatusAdmin);
+router.patch('/:bookingId/progress', auth('SUPER_ADMIN', 'ADMIN', 'TEAM_LEADER', 'CLEANER'), BookingController.updateBookingProgress);
 router.patch('/:bookingId/assign-team', auth('ADMIN'), BookingController.assignTeamToBookingAdmin);
 router.patch('/:bookingId/cancel', auth('CUSTOMER', 'ADMIN'), BookingController.cancelBooking);
 

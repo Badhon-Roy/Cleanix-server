@@ -153,6 +153,18 @@ const downloadBookingPDF = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateBookingProgress = catchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+  const result = await BookingService.updateBookingProgressByTeamInDB(bookingId, req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Booking status updated successfully!',
+    data: result,
+  });
+});
+
 export const BookingController = {
   createBooking,
   getMyBookings,
@@ -164,4 +176,5 @@ export const BookingController = {
   getAvailableBookings,
   requestBookingByTeam,
   downloadBookingPDF,
+  updateBookingProgress,
 };
