@@ -75,7 +75,7 @@ const cleanerSchema = new Schema<ICleaner>(
     },
     rating: {
       type: Number,
-      default: 5.0,
+      default: 0,
     },
     totalJobsDone: {
       type: Number,

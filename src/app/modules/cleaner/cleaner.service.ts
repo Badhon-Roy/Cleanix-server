@@ -176,12 +176,14 @@ const getCleanerProfileMeFromDB = async (userId: string) => {
 
   const reviews = await Review.find({ booking: { $in: bookingIds } });
 
-  let ratingValue = '5.0';
+  let ratingValue = '0.0';
   if (reviews.length > 0) {
-    const avg = reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / reviews.length;
+    const avg = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviews.length;
     ratingValue = avg.toFixed(1);
-  } else if (cleaner.rating) {
+  } else if (cleaner.rating && cleaner.rating > 0 && completedCount > 0) {
     ratingValue = Number(cleaner.rating).toFixed(1);
+  } else {
+    ratingValue = '0.0';
   }
 
   const cleanerObj: Record<string, any> = cleaner.toObject();
