@@ -4,6 +4,8 @@ import { Review } from './review.model';
 import { Booking } from '../booking/booking.model';
 import { User } from '../user/user.model';
 import { ServiceCategory } from '../servicecategory/servicecategory.model';
+import { Team } from '../team/team.model';
+import { TeamAssignment } from '../teamAssignment/teamAssignment.model';
 import { emitReviewCreated, emitReviewUpdated } from '../../socket/socket';
 
 const createOrUpdateReviewInDB = async (
@@ -66,6 +68,55 @@ const getAllReviewsFromDB = async (query: Record<string, unknown>) => {
   if (query.isApproved !== undefined) filter.isApproved = query.isApproved === 'true';
   if (query.isFeatured !== undefined) filter.isFeatured = query.isFeatured === 'true';
   if (query.minRating) filter.rating = { $gte: Number(query.minRating) };
+
+  // Filter reviews by specific team squad
+  if (query.team || query.teamId || query.teamSlug) {
+    const teamIdentifier = String(query.team || query.teamId || query.teamSlug);
+    let teamDoc = null;
+    if (Types.ObjectId.isValid(teamIdentifier)) {
+      teamDoc = await Team.findOne({ _id: teamIdentifier, isDeleted: false });
+    }
+    if (!teamDoc) {
+      const formattedName = teamIdentifier.replace(/-/g, ' ');
+      teamDoc = await Team.findOne({
+        isDeleted: false,
+        $or: [
+          { teamCode: teamIdentifier },
+          { teamCode: { $regex: new RegExp(`^${teamIdentifier.trim()}$`, 'i') } },
+          { teamName: { $regex: new RegExp(`^${formattedName.trim()}$`, 'i') } },
+        ],
+      });
+    }
+
+    if (!teamDoc) {
+      return [];
+    }
+
+    const assignments = await TeamAssignment.find({
+      team: teamDoc._id,
+      isDeleted: false,
+    }).select('booking');
+    const assignmentBookingIds = assignments.map((a) => a.booking).filter(Boolean);
+
+    const directBookings = await Booking.find({
+      assignedTeam: teamDoc._id,
+      isDeleted: false,
+    }).select('_id');
+    const directBookingIds = directBookings.map((b) => b._id);
+
+    const allBookingIds = Array.from(
+      new Set([
+        ...assignmentBookingIds.map((id) => id.toString()),
+        ...directBookingIds.map((id) => id.toString()),
+      ]),
+    ).map((id) => new Types.ObjectId(id));
+
+    if (allBookingIds.length === 0) {
+      return [];
+    }
+
+    filter.booking = { $in: allBookingIds };
+  }
 
   const reviews = await Review.find(filter)
     .populate('customer', 'name email phone avatar')
@@ -134,12 +185,56 @@ const getApprovedReviewsByServiceFromDB = async (serviceSlugOrId: string) => {
   return reviews;
 };
 
-const getApprovedReviewsByTeamFromDB = async (teamId: string) => {
-  const bookings = await Booking.find({ assignedTeam: teamId, isDeleted: false }).select('_id');
-  const bookingIds = bookings.map((b) => b._id);
+const getApprovedReviewsByTeamFromDB = async (teamIdOrSlug: string) => {
+  if (!teamIdOrSlug) return [];
+
+  let teamDoc = null;
+  if (Types.ObjectId.isValid(teamIdOrSlug)) {
+    teamDoc = await Team.findOne({ _id: teamIdOrSlug, isDeleted: false });
+  }
+  if (!teamDoc) {
+    const formattedName = teamIdOrSlug.replace(/-/g, ' ');
+    teamDoc = await Team.findOne({
+      isDeleted: false,
+      $or: [
+        { teamCode: teamIdOrSlug },
+        { teamCode: { $regex: new RegExp(`^${teamIdOrSlug.trim()}$`, 'i') } },
+        { teamName: { $regex: new RegExp(`^${formattedName.trim()}$`, 'i') } },
+      ],
+    });
+  }
+
+  if (!teamDoc) {
+    return [];
+  }
+
+  // 1. Bookings assigned via TeamAssignment
+  const assignments = await TeamAssignment.find({
+    team: teamDoc._id,
+    isDeleted: false,
+  }).select('booking');
+  const assignmentBookingIds = assignments.map((a) => a.booking).filter(Boolean);
+
+  // 2. Bookings assigned directly on Booking model
+  const directBookings = await Booking.find({
+    assignedTeam: teamDoc._id,
+    isDeleted: false,
+  }).select('_id');
+  const directBookingIds = directBookings.map((b) => b._id);
+
+  const allBookingIds = Array.from(
+    new Set([
+      ...assignmentBookingIds.map((id) => id.toString()),
+      ...directBookingIds.map((id) => id.toString()),
+    ]),
+  ).map((id) => new Types.ObjectId(id));
+
+  if (allBookingIds.length === 0) {
+    return [];
+  }
 
   const reviews = await Review.find({
-    booking: { $in: bookingIds },
+    booking: { $in: allBookingIds },
   })
     .populate('customer', 'name email phone avatar')
     .populate({
