@@ -13,12 +13,6 @@ router.get(
 );
 
 router.get(
-  '/:id',
-  auth('ADMIN', 'CUSTOMER', 'CLEANER', 'TEAM_LEADER'),
-  CleanerController.getCleanerById,
-);
-
-router.get(
   '/profile/me',
   auth('CLEANER', 'TEAM_LEADER', 'ADMIN'),
   CleanerController.getCleanerProfileMe,
@@ -38,10 +32,23 @@ router.patch(
 );
 
 router.patch(
+  '/profile/me',
+  auth('CLEANER', 'TEAM_LEADER'),
+  validateRequest(CleanerValidation.updateCleanerProfileValidationSchema),
+  CleanerController.updateCleanerProfile,
+);
+
+router.patch(
   '/:id/approval',
   auth('ADMIN'),
   validateRequest(CleanerValidation.updateCleanerApprovalValidationSchema),
   CleanerController.updateCleanerApproval,
+);
+
+router.get(
+  '/:id',
+  auth('ADMIN', 'CUSTOMER', 'CLEANER', 'TEAM_LEADER'),
+  CleanerController.getCleanerById,
 );
 
 export const CleanerRoutes = router;

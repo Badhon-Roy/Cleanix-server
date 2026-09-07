@@ -31,15 +31,27 @@ const getCleanerByIdFromDB = async (id: string) => {
 };
 
 const updateCleanerProfileInDB = async (userId: string, payload: Partial<ICleaner>) => {
-  const cleaner = await Cleaner.findOne({ user: userId, isDeleted: false });
+  let cleaner = await Cleaner.findOne({ user: userId, isDeleted: false });
   if (!cleaner) {
+    cleaner = await Cleaner.findById(userId);
+  }
+  if (!cleaner || cleaner.isDeleted) {
     throw new AppError(404, 'Cleaner profile not found');
   }
 
-  const updatedCleaner = await Cleaner.findOneAndUpdate({ user: userId }, payload, {
+  // Sync User Collection if name, phone, or avatar is provided
+  const userUpdates: Record<string, any> = {};
+  if (payload.name) userUpdates.name = payload.name;
+  if (payload.phone) userUpdates.phone = payload.phone;
+
+  if (Object.keys(userUpdates).length > 0 && cleaner.user) {
+    await User.findByIdAndUpdate(cleaner.user, userUpdates, { new: true });
+  }
+
+  const updatedCleaner = await Cleaner.findByIdAndUpdate(cleaner._id, payload, {
     new: true,
     runValidators: true,
-  });
+  }).populate('user', 'name email phone role status isApproved');
 
   return updatedCleaner;
 };
