@@ -18,6 +18,7 @@ import { PlanRoutes } from '../modules/plan/plan.route';
 import { GalleryRoutes } from '../modules/gallery/gallery.route';
 import { SubscriptionRoutes } from '../modules/subscription/subscription.route';
 import { ReviewRoutes } from '../modules/review/review.route';
+import { UploadRoutes } from '../modules/upload/upload.route';
 
 const router = Router();
 
@@ -97,6 +98,10 @@ const moduleRoutes = [
   {
     path: '/gallery',
     route: GalleryRoutes,
+  },
+  {
+    path: '/upload',
+    route: UploadRoutes,
   },
 ];
 

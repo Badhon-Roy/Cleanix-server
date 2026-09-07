@@ -5,6 +5,7 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
 import router from './app/routes';
 
+import path from 'path';
 import config from './config';
 
 const app: Application = express();
@@ -13,6 +14,9 @@ const app: Application = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+
+// Static uploads folder
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 const allowedOrigins = [
   'http://localhost:3000',
