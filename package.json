@@ -4,8 +4,8 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node ./dist/server.js",
+    "build": "node api.js && tsc",
+    "start": "node api.js && node ./dist/server.js",
     "start:prod": "node ./dist/server.js",
     "start:dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "lint": "eslint src/**/*.ts",
